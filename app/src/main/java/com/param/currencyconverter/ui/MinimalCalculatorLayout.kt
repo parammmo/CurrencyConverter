@@ -22,7 +22,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -369,7 +372,16 @@ private fun SwapCircles(
                 .background(palette.filledAccent),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = "⇅", color = OnAccent, fontSize = 20.sp)
+            // Vektor-Icon statt des Textzeichens "⇅": Ein Glyph wird über seine
+            // Zeilenbox zentriert (inkl. Ober-/Unterlänge), nicht über die
+            // sichtbare Form — deshalb saß es sichtbar zu hoch. Der Handoff
+            // verlangt für ⌫ ⇅ ↻ ⋯ ohnehin die Material-Symbols-Entsprechung.
+            Icon(
+                imageVector = Icons.Default.SwapVert,
+                contentDescription = "Währungen tauschen",
+                tint = OnAccent,
+                modifier = Modifier.size(26.dp),
+            )
         }
     }
 }
