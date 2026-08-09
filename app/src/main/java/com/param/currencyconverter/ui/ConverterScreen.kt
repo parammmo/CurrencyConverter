@@ -675,28 +675,45 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
         ) {
             FooterGlyph(glyph = "↻", tint = colors.onSurfaceVariant, onClick = data.onReload)
 
-            // Kurs und Zeitpunkt in einer Zeile, getrennt durch einen
-            // Mittelpunkt. Sind die Kurse veraltet, kommt "Offline" davor und
-            // die ganze Zeile wechselt auf die Akzentfarbe: Der Entwurf kennt
-            // keinen Fehlerzustand, und ein zweiter roter Ton nur für diesen
-            // Fall würde die Palette aufweichen. Der Akzent ist ohnehin die
-            // einzige Farbe, die hier Aufmerksamkeit zieht.
-            Text(
-                text = buildString {
-                    if (data.isStale) append("Offline · ")
-                    append(
-                        data.rate
-                            ?.let { "1 ${data.fromCurrency} = ${formatAmount(it)} ${data.toCurrency}" }
-                            ?: "Kein Kurs verfügbar"
+            // Kurs oben, Abrufzeitpunkt darunter — zwei verschiedene
+            // Aussagen ("wie viel bekomme ich" und "wie alt ist die Auskunft"),
+            // die nebeneinander zu einer langen Zeile verschmolzen sind.
+            //
+            // Sind die Kurse veraltet, kommt "Offline" vor den Zeitpunkt (nicht
+            // vor den Kurs — veraltet ist die Auskunft, nicht die Rechnung) und
+            // beide Zeilen wechseln auf die Akzentfarbe. Bewusst kein eigenes
+            // Rot: Der Entwurf kennt keinen Fehlerzustand, und ein zweiter
+            // Signalton würde die Palette aufweichen.
+            val footerColor = if (data.isStale) colors.primary else colors.onSurfaceVariant
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = data.rate
+                        ?.let { "1 ${data.fromCurrency} = ${formatAmount(it)} ${data.toCurrency}" }
+                        ?: "Kein Kurs verfügbar",
+                    color = footerColor,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                data.fetchedAt?.let { fetchedAt ->
+                    Text(
+                        text = buildString {
+                            if (data.isStale) append("Offline · ")
+                            append(formatMinimalTimestamp(fetchedAt))
+                        },
+                        color = footerColor,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    data.fetchedAt?.let { append(" · ${formatMinimalTimestamp(it)}") }
-                },
-                color = if (data.isStale) colors.primary else colors.onSurfaceVariant,
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            )
+                }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
