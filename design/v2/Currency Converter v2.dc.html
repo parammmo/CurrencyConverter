@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#EDE4DC}a{color:#A6401F}a:hover{color:#8F3418}</style>
+</helmet>
+<div style="display:flex;gap:56px;padding:48px;justify-content:center;align-items:flex-start;flex-wrap:wrap;font-family:'Instrument Sans',sans-serif">
+
+<div style="display:flex;flex-direction:column;gap:14px;align-items:center">
+<div style="font:600 12px ui-monospace,Menlo,monospace;letter-spacing:0.12em;color:#8A6A5C">{{ labelL }}</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ darkL }}" hint-size="412px,892px">
+<div style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;background:{{ appBgL }};font-family:'Instrument Sans',sans-serif;transition:background 0.35s">
+  <div style="position:relative;display:flex;flex-direction:column">
+    <div onClick="{{ focusL }}" data-f="top" style="display:flex;align-items:baseline;justify-content:space-between;padding:34px 24px 30px;cursor:pointer;opacity:{{ topDimL }}">
+      <div style="font-size:13px;font-weight:600;letter-spacing:0.14em;color:{{ topCodeColL }}">{{ curTopL }}</div>
+      <div style="font-size:56px;font-weight:500;color:{{ amtColL }};font-variant-numeric:tabular-nums;max-width:270px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15">{{ topAmtL }}</div>
+    </div>
+    <div style="height:1px;background:{{ hairL }};margin:0 24px"></div>
+    <div onClick="{{ focusL }}" data-f="bot" style="display:flex;align-items:baseline;justify-content:space-between;padding:30px 24px 34px;cursor:pointer;opacity:{{ botDimL }}">
+      <div style="font-size:13px;font-weight:600;letter-spacing:0.14em;color:{{ botCodeColL }}">{{ curBotL }}</div>
+      <div style="font-size:56px;font-weight:500;color:{{ amtColL }};font-variant-numeric:tabular-nums;max-width:270px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15">{{ botAmtL }}</div>
+    </div>
+    <div onClick="{{ swapL }}" title="Swap" style="position:absolute;left:24px;top:50%;transform:translateY(-50%);width:74px;height:48px;cursor:pointer">
+      <div style="position:absolute;left:26px;top:0;width:48px;height:48px;border-radius:50%;background:{{ swapBackL }}"></div>
+      <div style="position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;background:{{ swapFrontL }};display:flex;align-items:center;justify-content:center;color:#FFF5EE;font-size:20px">&#8645;</div>
+    </div>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:4px;padding:6px 14px;border-top:1px solid {{ hairL }}">
+    <button data-k="C" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 22px 'Instrument Sans',sans-serif;color:{{ utilColL }};cursor:pointer">C</button>
+    <button data-k="bs" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 22px 'Instrument Sans',sans-serif;color:{{ utilColL }};cursor:pointer">&#9003;</button>
+    <button data-k="%" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 22px 'Instrument Sans',sans-serif;color:{{ utilColL }};cursor:pointer">%</button>
+    <button data-k="/" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColL }};cursor:pointer">&#247;</button>
+    <button data-k="7" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">7</button>
+    <button data-k="8" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">8</button>
+    <button data-k="9" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">9</button>
+    <button data-k="*" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColL }};cursor:pointer">&#215;</button>
+    <button data-k="4" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">4</button>
+    <button data-k="5" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">5</button>
+    <button data-k="6" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">6</button>
+    <button data-k="-" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColL }};cursor:pointer">&#8722;</button>
+    <button data-k="1" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">1</button>
+    <button data-k="2" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">2</button>
+    <button data-k="3" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">3</button>
+    <button data-k="+" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColL }};cursor:pointer">+</button>
+    <button data-k="0" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">0</button>
+    <button data-k="," onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColL }};cursor:pointer">,</button>
+    <button data-k="swap" onClick="{{ tapL }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 24px 'Instrument Sans',sans-serif;color:{{ utilColL }};cursor:pointer">&#8645;</button>
+    <div style="display:flex;align-items:center;justify-content:center">
+      <button data-k="=" onClick="{{ tapL }}" style-active="transform:scale(0.92)" style="width:62px;height:62px;border-radius:50%;background:{{ eqBgL }};color:#FFF5EE;border:none;font:500 30px 'Instrument Sans',sans-serif;cursor:pointer">=</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 8px;border-top:1px solid {{ hairL }}">
+    <div style="font-size:18px;color:{{ utilColL }};cursor:pointer">&#8635;</div>
+    <div style="font-size:12px;color:{{ utilColL }}">{{ rateLineL }} &#183; {{ dateStr }}</div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div onClick="{{ toggleL }}" title="Light/Dark" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+        <div style="display:{{ moonDispL }};width:13px;height:13px;border-radius:50%;box-shadow:inset -4.5px -3px 0 0 {{ opColL }}"></div>
+        <div style="display:{{ sunDispL }};width:15px;height:15px;border-radius:50%;border:1.5px solid {{ opColL }};box-sizing:border-box;align-items:center;justify-content:center"><div style="width:7px;height:7px;border-radius:50%;background:{{ opColL }}"></div></div>
+      </div>
+      <div style="font-size:18px;color:{{ utilColL }};cursor:pointer">&#8943;</div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px;align-items:center">
+<div style="font:600 12px ui-monospace,Menlo,monospace;letter-spacing:0.12em;color:#8A6A5C">{{ labelD }}</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ darkD }}" hint-size="412px,892px">
+<div style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;background:{{ appBgD }};font-family:'Instrument Sans',sans-serif;transition:background 0.35s">
+  <div style="position:relative;display:flex;flex-direction:column">
+    <div onClick="{{ focusD }}" data-f="top" style="display:flex;align-items:baseline;justify-content:space-between;padding:34px 24px 30px;cursor:pointer;opacity:{{ topDimD }}">
+      <div style="font-size:13px;font-weight:600;letter-spacing:0.14em;color:{{ topCodeColD }}">{{ curTopD }}</div>
+      <div style="font-size:56px;font-weight:500;color:{{ amtColD }};font-variant-numeric:tabular-nums;max-width:270px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15">{{ topAmtD }}</div>
+    </div>
+    <div style="height:1px;background:{{ hairD }};margin:0 24px"></div>
+    <div onClick="{{ focusD }}" data-f="bot" style="display:flex;align-items:baseline;justify-content:space-between;padding:30px 24px 34px;cursor:pointer;opacity:{{ botDimD }}">
+      <div style="font-size:13px;font-weight:600;letter-spacing:0.14em;color:{{ botCodeColD }}">{{ curBotD }}</div>
+      <div style="font-size:56px;font-weight:500;color:{{ amtColD }};font-variant-numeric:tabular-nums;max-width:270px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15">{{ botAmtD }}</div>
+    </div>
+    <div onClick="{{ swapD }}" title="Swap" style="position:absolute;left:24px;top:50%;transform:translateY(-50%);width:74px;height:48px;cursor:pointer">
+      <div style="position:absolute;left:26px;top:0;width:48px;height:48px;border-radius:50%;background:{{ swapBackD }}"></div>
+      <div style="position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;background:{{ swapFrontD }};display:flex;align-items:center;justify-content:center;color:#FFF5EE;font-size:20px">&#8645;</div>
+    </div>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:4px;padding:6px 14px;border-top:1px solid {{ hairD }}">
+    <button data-k="C" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 22px 'Instrument Sans',sans-serif;color:{{ utilColD }};cursor:pointer">C</button>
+    <button data-k="bs" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 22px 'Instrument Sans',sans-serif;color:{{ utilColD }};cursor:pointer">&#9003;</button>
+    <button data-k="%" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 22px 'Instrument Sans',sans-serif;color:{{ utilColD }};cursor:pointer">%</button>
+    <button data-k="/" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColD }};cursor:pointer">&#247;</button>
+    <button data-k="7" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">7</button>
+    <button data-k="8" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">8</button>
+    <button data-k="9" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">9</button>
+    <button data-k="*" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColD }};cursor:pointer">&#215;</button>
+    <button data-k="4" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">4</button>
+    <button data-k="5" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">5</button>
+    <button data-k="6" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">6</button>
+    <button data-k="-" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColD }};cursor:pointer">&#8722;</button>
+    <button data-k="1" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">1</button>
+    <button data-k="2" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">2</button>
+    <button data-k="3" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">3</button>
+    <button data-k="+" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 30px 'Instrument Sans',sans-serif;color:{{ opColD }};cursor:pointer">+</button>
+    <button data-k="0" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">0</button>
+    <button data-k="," onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 28px 'Instrument Sans',sans-serif;color:{{ numColD }};cursor:pointer">,</button>
+    <button data-k="swap" onClick="{{ tapD }}" style-active="transform:scale(0.9);opacity:0.6" style="background:none;border:none;border-radius:20px;font:500 24px 'Instrument Sans',sans-serif;color:{{ utilColD }};cursor:pointer">&#8645;</button>
+    <div style="display:flex;align-items:center;justify-content:center">
+      <button data-k="=" onClick="{{ tapD }}" style-active="transform:scale(0.92)" style="width:62px;height:62px;border-radius:50%;background:{{ eqBgD }};color:#FFF5EE;border:none;font:500 30px 'Instrument Sans',sans-serif;cursor:pointer">=</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 8px;border-top:1px solid {{ hairD }}">
+    <div style="font-size:18px;color:{{ utilColD }};cursor:pointer">&#8635;</div>
+    <div style="font-size:12px;color:{{ utilColD }}">{{ rateLineD }} &#183; {{ dateStr }}</div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div onClick="{{ toggleD }}" title="Light/Dark" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+        <div style="display:{{ moonDispD }};width:13px;height:13px;border-radius:50%;box-shadow:inset -4.5px -3px 0 0 {{ opColD }}"></div>
+        <div style="display:{{ sunDispD }};width:15px;height:15px;border-radius:50%;border:1.5px solid {{ opColD }};box-sizing:border-box;align-items:center;justify-content:center"><div style="width:7px;height:7px;border-radius:50%;background:{{ opColD }}"></div></div>
+      </div>
+      <div style="font-size:18px;color:{{ utilColD }};cursor:pointer">&#8943;</div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1050,&quot;height&quot;:1010},&quot;xmrPriceEur&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:285.7,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:1,&quot;max&quot;:2000,&quot;step&quot;:0.1,&quot;section&quot;:&quot;Rates&quot;,&quot;unit&quot;:&quot;EUR&quot;},&quot;decimalDot&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Format&quot;}}">
+const THEMES = {
+  light: { appBg: '#F6F0EA', hair: 'rgba(90,50,30,0.14)', amtCol: '#2E1B12', numCol: '#3A251A', opCol: '#A6401F', utilCol: '#8A6A5C', eqBg: '#A6401F', swapFront: '#A6401F', swapBack: 'rgba(201,146,126,0.5)', accent: '#A6401F', secondary: '#8A6A5C', themeIcon: '\u263E', label: 'LIGHT', darkFrame: false },
+  dark: { appBg: '#1B120E', hair: 'rgba(255,220,195,0.14)', amtCol: '#F8EFE8', numCol: '#EFDFD4', opCol: '#D97B52', utilCol: '#9C7A67', eqBg: '#B54B26', swapFront: '#B54B26', swapBack: 'rgba(165,115,92,0.45)', accent: '#D97B52', secondary: '#9C7A67', themeIcon: '\u2600', label: 'DARK', darkFrame: true },
+};
+class Component extends DCLogic {
+  state = { L: this.mk('light'), D: this.mk('dark') };
+  mk(theme) { return { theme, entry: '0', acc: null, op: null, fresh: false, active: 'top', cur: ['EUR', 'XMR'] }; }
+  parse(s) { return parseFloat(String(s).replace(',', '.')) || 0; }
+  raw(n) {
+    if (!isFinite(n)) return '0';
+    let s = Math.abs(n) >= 1e10 ? n.toExponential(4) : String(Math.round(n * 1e6) / 1e6);
+    if (s.length > 11) s = Number(n.toPrecision(8)).toString();
+    return s.replace('.', ',');
+  }
+  disp(s) { return this.props.decimalDot ? String(s).replace(',', '.') : String(s); }
+  valEur(c) { return c === 'EUR' ? 1 : (this.props.xmrPriceEur ?? 285.7); }
+  conv(amt, from, to) { return amt * this.valEur(from) / this.valEur(to); }
+  calc(a, op, b) { return op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : b === 0 ? 0 : a / b; }
+  tap(key, k) {
+    this.setState(s => {
+      const st = { ...s[key] };
+      if ('0123456789'.includes(k)) {
+        if (st.fresh || st.entry === '0') { st.entry = k; st.fresh = false; }
+        else if (st.entry.length < 10) st.entry += k;
+      } else if (k === ',') {
+        if (st.fresh) { st.entry = '0,'; st.fresh = false; }
+        else if (!st.entry.includes(',')) st.entry += ',';
+      } else if (k === 'C') { st.entry = '0'; st.acc = null; st.op = null; st.fresh = false; }
+      else if (k === 'bs') { st.entry = st.entry.length > 1 ? st.entry.slice(0, -1) : '0'; st.fresh = false; }
+      else if (k === '%') { st.entry = this.raw(this.parse(st.entry) / 100); st.fresh = true; }
+      else if (k === 'swap') { st.cur = [st.cur[1], st.cur[0]]; }
+      else if (k === '=') {
+        if (st.op != null) { st.entry = this.raw(this.calc(st.acc, st.op, this.parse(st.entry))); st.op = null; st.acc = null; st.fresh = true; }
+      } else {
+        if (st.op != null && !st.fresh) st.entry = this.raw(this.calc(st.acc, st.op, this.parse(st.entry)));
+        st.acc = this.parse(st.entry); st.op = k; st.fresh = true;
+      }
+      return { [key]: st };
+    });
+  }
+  vals(key) {
+    const st = this.state[key];
+    const t = THEMES[st.theme] || THEMES[key === 'D' ? 'dark' : 'light'];
+    const [cT, cB] = st.cur;
+    const eVal = this.parse(st.entry);
+    const other = this.raw(st.active === 'top' ? this.conv(eVal, cT, cB) : this.conv(eVal, cB, cT));
+    return {
+      ['curTop' + key]: cT, ['curBot' + key]: cB,
+      ['topAmt' + key]: this.disp(st.active === 'top' ? st.entry : other),
+      ['botAmt' + key]: this.disp(st.active === 'bot' ? st.entry : other),
+      ['topCodeCol' + key]: st.active === 'top' ? t.accent : t.secondary,
+      ['botCodeCol' + key]: st.active === 'bot' ? t.accent : t.secondary,
+      ['topDim' + key]: st.active === 'top' ? '1' : '0.45',
+      ['botDim' + key]: st.active === 'bot' ? '1' : '0.45',
+      ['rateLine' + key]: '1 ' + cT + ' = ' + this.disp(this.raw(this.conv(1, cT, cB))) + ' ' + cB,
+      ['appBg' + key]: t.appBg, ['hair' + key]: t.hair, ['amtCol' + key]: t.amtCol,
+      ['numCol' + key]: t.numCol, ['opCol' + key]: t.opCol, ['utilCol' + key]: t.utilCol,
+      ['eqBg' + key]: t.eqBg, ['swapFront' + key]: t.swapFront, ['swapBack' + key]: t.swapBack,
+      ['moonDisp' + key]: t.darkFrame ? 'none' : 'block', ['sunDisp' + key]: t.darkFrame ? 'flex' : 'none',
+      ['label' + key]: t.label, ['dark' + key]: t.darkFrame,
+      ['tap' + key]: e => this.tap(key, e.currentTarget.dataset.k),
+      ['swap' + key]: () => this.tap(key, 'swap'),
+      ['toggle' + key]: () => this.setState(s => ({ [key]: { ...s[key], theme: s[key].theme === 'light' ? 'dark' : 'light' } })),
+      ['focus' + key]: e => { const f = e.currentTarget.dataset.f; this.setState(s => ({ [key]: { ...s[key], active: f, entry: '0', acc: null, op: null, fresh: false } })); },
+    };
+  }
+  renderVals() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return {
+      dateStr: p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()),
+      ...this.vals('L'), ...this.vals('D'),
+    };
+  }
+}
+</script>
+</body>
+</html>
