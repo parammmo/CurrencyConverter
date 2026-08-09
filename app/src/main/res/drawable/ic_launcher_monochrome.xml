@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Monochrom-Ebene für "Themed Icons" (Android 13+): Wenn der Nutzer getönte
+  Icons aktiviert, färbt das System diese Form passend zum Hintergrundbild ein
+  und ignoriert unsere Farben. Nur die Silhouette zählt, deshalb dieselben
+  Pfade wie im Vordergrund — ohne eigene Hintergrundfläche.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,38 L64,38 L64,29 L82,42 L64,55 L64,46 L28,46 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,62 L44,62 L44,53 L26,66 L44,79 L44,70 L80,70 Z" />
+</vector>

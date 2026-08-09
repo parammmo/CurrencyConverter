@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Was beim Cloud-Backup bzw. beim Umzug auf ein neues Gerät mitgenommen wird.
+
+  Mitnehmen: user_settings (Währungspaar, Theme-Wunsch) — das ist echte
+  Nutzereingabe, die auf dem neuen Gerät wieder da sein soll.
+
+  Weglassen: rates_cache — Wechselkurse sind flüchtig. Würden sie
+  mitwandern, käme auf dem neuen Gerät ein alter Kurs mitsamt altem
+  Zeitstempel an, und die App zeigte "Kurse von 15:13 Uhr" für Daten von
+  vor drei Wochen. Neu laden ist billiger und ehrlicher.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude
+            domain="file"
+            path="datastore/rates_cache.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude
+            domain="file"
+            path="datastore/rates_cache.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>

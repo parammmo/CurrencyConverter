@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Vordergrund des Adaptive Icons: zwei gegenläufige Pfeile = "umrechnen".
+  Dasselbe Motiv wie der Swap-Button in der App.
+
+  Die Leinwand ist 108x108, aber garantiert sichtbar ist nur ein Kreis von
+  66dp Durchmesser in der Mitte (Radius 33 um den Punkt 54,54) — außen darf
+  der Launcher beliebig zuschneiden. Alle Punkte hier liegen innerhalb von
+  Radius 30,5, damit auch die Pfeilspitzen keine Maske erwischt.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Pfeil nach rechts (oben) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,38 L64,38 L64,29 L82,42 L64,55 L64,46 L28,46 Z" />
+
+    <!-- Pfeil nach links (unten) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,62 L44,62 L44,53 L26,66 L44,79 L44,70 L80,70 Z" />
+</vector>
