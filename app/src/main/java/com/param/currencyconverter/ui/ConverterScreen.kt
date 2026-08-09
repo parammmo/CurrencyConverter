@@ -28,7 +28,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,54 +61,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// ---------------------------------------------------------------------------
-// Farbpalette (v2)
-// ---------------------------------------------------------------------------
-
-/**
- * Deutlich kleiner als die Palette von v1: Der Entwurf kommt mit fünf Rollen
- * aus, weil es keine Kachelflächen mehr gibt, die eigene Farben bräuchten.
- * Alles steht direkt auf dem App-Hintergrund.
- */
-private data class MinimalPalette(
-    val appBackground: Color,
-    val hairline: Color,
-    val amount: Color,
-    val digit: Color,
-    /** Operatoren, aktiver Währungscode, "="-Fläche, vorderer Swap-Kreis, Theme-Symbol. */
-    val accent: Color,
-    /** Hilfstasten, Fußzeile, inaktiver Währungscode. */
-    val secondary: Color,
-    val filledAccent: Color,
-    val swapBack: Color,
-)
-
-private val MinimalLight = MinimalPalette(
-    appBackground = Color(0xFFF6F0EA),
-    hairline = Color(0x245A321E),
-    amount = Color(0xFF2E1B12),
-    digit = Color(0xFF3A251A),
-    accent = Color(0xFFA6401F),
-    secondary = Color(0xFF8A6A5C),
-    filledAccent = Color(0xFFA6401F),
-    swapBack = Color(0x80C9927E),
-)
-
-private val MinimalDark = MinimalPalette(
-    appBackground = Color(0xFF1B120E),
-    hairline = Color(0x24FFDCC3),
-    amount = Color(0xFFF8EFE8),
-    digit = Color(0xFFEFDFD4),
-    accent = Color(0xFFD97B52),
-    secondary = Color(0xFF9C7A67),
-    // Gefüllte Flächen nehmen im Dunkeln einen dunkleren Ton als der Akzent:
-    // ein heller Akzent als große Fläche würde blenden.
-    filledAccent = Color(0xFFB54B26),
-    swapBack = Color(0x73A5735C),
-)
-
-private val OnAccent = Color(0xFFFFF5EE)
-
 /**
  * Alles, was das Layout zum Zeichnen braucht — gebündelt, damit die einzelnen
  * Bausteine nicht ein Dutzend Parameter durchreichen müssen.
@@ -119,6 +73,8 @@ data class ConverterLayoutData(
     val onToSelected: (String) -> Unit,
     val onSwap: () -> Unit,
     val fetchedAt: Long?,
+    /** Kurse stammen aus einem abgelaufenen Cache, weil das Netz nicht ging. */
+    val isStale: Boolean,
     val onReload: () -> Unit,
     /** Wie viele [toCurrency] man für 1 [fromCurrency] bekommt. */
     val rate: Double?,
@@ -160,22 +116,22 @@ fun ConverterScreen(
     onToggleTheme: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = if (darkTheme) MinimalDark else MinimalLight
+    val colors = MaterialTheme.colorScheme
 
     when {
         uiState.isLoading -> Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(palette.appBackground),
+                .background(colors.background),
             contentAlignment = Alignment.Center,
         ) {
-            CircularProgressIndicator(color = palette.accent)
+            CircularProgressIndicator(color = colors.primary)
         }
 
         uiState.error != null -> Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(palette.appBackground)
+                .background(colors.background)
                 .padding(24.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -183,20 +139,20 @@ fun ConverterScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Text(text = uiState.error, color = palette.amount, fontSize = 16.sp)
+                Text(text = uiState.error, color = colors.onBackground, fontSize = 16.sp)
                 // Heuristik 5: nicht nur melden, sondern einen Weg zurück
                 // anbieten. Als gefüllte Pille — dieselbe Rolle wie die
                 // "="-Taste: die eine Aktion, die man jetzt tun soll.
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(percent = 50))
-                        .background(palette.filledAccent)
+                        .background(colors.primaryContainer)
                         .clickable(onClick = onReload)
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
                     Text(
                         text = "Erneut versuchen",
-                        color = OnAccent,
+                        color = colors.onPrimaryContainer,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                     )
@@ -215,6 +171,7 @@ fun ConverterScreen(
                 onToSelected = onToSelected,
                 onSwap = onSwap,
                 fetchedAt = uiState.fetchedAt,
+                isStale = uiState.isStale,
                 onReload = onReload,
                 rate = rateBetween(uiState.fromCurrency, uiState.toCurrency, uiState),
                 darkTheme = darkTheme,
@@ -287,10 +244,10 @@ private val MinimalKeyRows: List<List<MinimalKey>> = listOf(
  */
 @Composable
 private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modifier) {
-    val palette = if (data.darkTheme) MinimalDark else MinimalLight
+    val colors = MaterialTheme.colorScheme
     // Der Entwurf verlangt einen weichen Übergang beim Themenwechsel (~350ms).
     val background by animateColorAsState(
-        targetValue = palette.appBackground,
+        targetValue = colors.background,
         animationSpec = tween(350),
         label = "minimalBackground",
     )
@@ -312,7 +269,7 @@ private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modi
     ) {
         CurrencySection(
             data = data,
-            palette = palette,
+            colors = colors,
             topAmount = if (calc.activeTop) calc.entry else converted,
             bottomAmount = if (calc.activeTop) converted else calc.entry,
             activeTop = calc.activeTop,
@@ -334,21 +291,21 @@ private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modi
         )
 
         MinimalKeypad(
-            palette = palette,
+            colors = colors,
             onKey = { code ->
                 if (code == "swap") data.onSwap() else calc = calc.onKey(code)
             },
             modifier = Modifier.weight(1f),
         )
 
-        MinimalFooter(data = data, palette = palette)
+        MinimalFooter(data = data, colors = colors)
     }
 }
 
 @Composable
 private fun CurrencySection(
     data: ConverterLayoutData,
-    palette: MinimalPalette,
+    colors: ColorScheme,
     topAmount: String,
     bottomAmount: String,
     activeTop: Boolean,
@@ -364,19 +321,19 @@ private fun CurrencySection(
                 code = data.fromCurrency,
                 amount = topAmount,
                 active = activeTop,
-                palette = palette,
+                colors = colors,
                 options = data.currencies,
                 onSelect = data.onFromSelected,
                 onFocus = onFocusTop,
                 topPadding = 34.dp,
                 bottomPadding = 30.dp,
             )
-            Hairline(palette = palette, modifier = Modifier.padding(horizontal = 24.dp))
+            Hairline(colors = colors, modifier = Modifier.padding(horizontal = 24.dp))
             CurrencyRow(
                 code = data.toCurrency,
                 amount = bottomAmount,
                 active = !activeTop,
-                palette = palette,
+                colors = colors,
                 options = data.currencies,
                 onSelect = data.onToSelected,
                 onFocus = onFocusBottom,
@@ -386,7 +343,7 @@ private fun CurrencySection(
         }
 
         SwapCircles(
-            palette = palette,
+            colors = colors,
             onSwap = data.onSwap,
             modifier = Modifier
                 .align(Alignment.CenterStart)
@@ -400,7 +357,7 @@ private fun CurrencyRow(
     code: String,
     amount: String,
     active: Boolean,
-    palette: MinimalPalette,
+    colors: ColorScheme,
     options: List<String>,
     onSelect: (String) -> Unit,
     onFocus: () -> Unit,
@@ -435,7 +392,7 @@ private fun CurrencyRow(
         Box(modifier = Modifier.alignByBaseline()) {
             Text(
                 text = code,
-                color = if (active) palette.accent else palette.secondary,
+                color = if (active) colors.primary else colors.onSurfaceVariant,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.14.em,
@@ -459,7 +416,7 @@ private fun CurrencyRow(
 
         Text(
             text = amount,
-            color = palette.amount,
+            color = colors.onBackground,
             style = TextStyle(
                 fontSize = 56.sp,
                 lineHeight = 56.sp * 1.15f,
@@ -478,12 +435,12 @@ private fun CurrencyRow(
 }
 
 @Composable
-private fun Hairline(palette: MinimalPalette, modifier: Modifier = Modifier) {
+private fun Hairline(colors: ColorScheme, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(palette.hairline),
+            .background(colors.outlineVariant),
     )
 }
 
@@ -494,7 +451,7 @@ private fun Hairline(palette: MinimalPalette, modifier: Modifier = Modifier) {
  */
 @Composable
 private fun SwapCircles(
-    palette: MinimalPalette,
+    colors: ColorScheme,
     onSwap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -539,19 +496,19 @@ private fun SwapCircles(
                 .offset(x = 26.dp)
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(palette.swapBack),
+                .background(colors.secondaryContainer),
         )
         Box(
             modifier = Modifier
                 .size(diameter.dp)
                 .clip(CircleShape)
-                .background(palette.filledAccent),
+                .background(colors.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Default.SwapVert,
                 contentDescription = "Währungen tauschen",
-                tint = OnAccent,
+                tint = colors.onPrimaryContainer,
                 modifier = Modifier
                     .size(26.dp)
                     // Vektorgrafik: Drehen per graphicsLayer ist hier
@@ -564,12 +521,12 @@ private fun SwapCircles(
 
 @Composable
 private fun MinimalKeypad(
-    palette: MinimalPalette,
+    colors: ColorScheme,
     onKey: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Hairline(palette = palette)
+        Hairline(colors = colors)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -586,7 +543,7 @@ private fun MinimalKeypad(
                     row.forEach { key ->
                         MinimalKeyButton(
                             key = key,
-                            palette = palette,
+                            colors = colors,
                             onClick = { onKey(key.code) },
                             modifier = Modifier
                                 .weight(1f)
@@ -602,7 +559,7 @@ private fun MinimalKeypad(
 @Composable
 private fun MinimalKeyButton(
     key: MinimalKey,
-    palette: MinimalPalette,
+    colors: ColorScheme,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -620,7 +577,7 @@ private fun MinimalKeyButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (isEquals) EqualsKey(key, palette, pressed) else GlyphKey(key, palette, pressed)
+        if (isEquals) EqualsKey(key, colors, pressed) else GlyphKey(key, colors, pressed)
     }
 }
 
@@ -640,11 +597,11 @@ private fun MinimalKeyButton(
  *    Druckpunkt" und passt zur runden "="-Taste.
  */
 @Composable
-private fun GlyphKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean) {
+private fun GlyphKey(key: MinimalKey, colors: ColorScheme, pressed: Boolean) {
     val (color, restingSize) = when (key.kind) {
-        MinimalKeyKind.DIGIT -> palette.digit to 28f
-        MinimalKeyKind.OPERATOR -> palette.accent to 30f
-        else -> palette.secondary to if (key.code == "swap") 24f else 22f
+        MinimalKeyKind.DIGIT -> colors.onSurface to 28f
+        MinimalKeyKind.OPERATOR -> colors.primary to 30f
+        else -> colors.onSurfaceVariant to if (key.code == "swap") 24f else 22f
     }
 
     val fontSize by animateFloatAsState(
@@ -666,7 +623,7 @@ private fun GlyphKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean)
                 .fillMaxHeight()
                 .aspectRatio(1f)
                 .clip(CircleShape)
-                .background(palette.accent.copy(alpha = scrimAlpha)),
+                .background(colors.primary.copy(alpha = scrimAlpha)),
         )
     }
 
@@ -684,7 +641,7 @@ private fun GlyphKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean)
  * Größe scharf, und das "=" darin wird ebenfalls neu gesetzt statt gestaucht.
  */
 @Composable
-private fun EqualsKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean) {
+private fun EqualsKey(key: MinimalKey, colors: ColorScheme, pressed: Boolean) {
     val diameter by animateFloatAsState(
         targetValue = if (pressed) 57f else 62f,
         animationSpec = tween(if (pressed) 90 else 160),
@@ -695,12 +652,12 @@ private fun EqualsKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean
         modifier = Modifier
             .size(diameter.dp)
             .clip(CircleShape)
-            .background(palette.filledAccent),
+            .background(colors.primaryContainer),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = key.label,
-            color = OnAccent,
+            color = colors.onPrimaryContainer,
             fontSize = 30.sp,
             fontWeight = FontWeight.Medium,
         )
@@ -708,9 +665,9 @@ private fun EqualsKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean
 }
 
 @Composable
-private fun MinimalFooter(data: ConverterLayoutData, palette: MinimalPalette) {
+private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
     Column {
-        Hairline(palette = palette)
+        Hairline(colors = colors)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -718,12 +675,17 @@ private fun MinimalFooter(data: ConverterLayoutData, palette: MinimalPalette) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            FooterGlyph(glyph = "↻", tint = palette.secondary, onClick = data.onReload)
+            FooterGlyph(glyph = "↻", tint = colors.onSurfaceVariant, onClick = data.onReload)
 
-            // Kurs und Zeitpunkt in *einer* Zeile, getrennt durch einen
-            // Mittelpunkt — v1 stapelte beides noch übereinander.
+            // Kurs und Zeitpunkt in einer Zeile, getrennt durch einen
+            // Mittelpunkt. Sind die Kurse veraltet, kommt "Offline" davor und
+            // die ganze Zeile wechselt auf die Akzentfarbe: Der Entwurf kennt
+            // keinen Fehlerzustand, und ein zweiter roter Ton nur für diesen
+            // Fall würde die Palette aufweichen. Der Akzent ist ohnehin die
+            // einzige Farbe, die hier Aufmerksamkeit zieht.
             Text(
                 text = buildString {
+                    if (data.isStale) append("Offline · ")
                     append(
                         data.rate
                             ?.let { "1 ${data.fromCurrency} = ${formatAmount(it)} ${data.toCurrency}" }
@@ -731,7 +693,7 @@ private fun MinimalFooter(data: ConverterLayoutData, palette: MinimalPalette) {
                     )
                     data.fetchedAt?.let { append(" · ${formatMinimalTimestamp(it)}") }
                 },
-                color = palette.secondary,
+                color = if (data.isStale) colors.primary else colors.onSurfaceVariant,
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -744,10 +706,10 @@ private fun MinimalFooter(data: ConverterLayoutData, palette: MinimalPalette) {
             ) {
                 ThemeGlyph(
                     darkTheme = data.darkTheme,
-                    tint = palette.accent,
+                    tint = colors.primary,
                     onClick = data.onToggleTheme,
                 )
-                FooterGlyph(glyph = "⋯", tint = palette.secondary, onClick = {})
+                FooterGlyph(glyph = "⋯", tint = colors.onSurfaceVariant, onClick = {})
             }
         }
     }
