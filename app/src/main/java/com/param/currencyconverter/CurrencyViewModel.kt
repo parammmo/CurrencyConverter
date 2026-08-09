@@ -23,8 +23,12 @@ data class ConverterUiState(
     val error: String? = null,
     val fromCurrency: String = UserPreferencesRepository.DEFAULT_FROM,
     val toCurrency: String = UserPreferencesRepository.DEFAULT_TO,
-    /** Unix-Millis des letzten erfolgreichen Abrufs, null = noch nie geladen. */
-    val fetchedAt: Long? = null,
+    /**
+     * Datum der Kurse laut EZB (ISO, z.B. "2026-08-09") — nicht der Zeitpunkt
+     * unseres Abrufs. Die EZB veröffentlicht einmal täglich; dieses Datum sagt
+     * also, wie aktuell die Zahlen wirklich sind.
+     */
+    val ratesDate: String? = null,
     /** Kurse stammen aus einem abgelaufenen Cache, weil das Netz nicht ging. */
     val isStale: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -102,7 +106,7 @@ class CurrencyViewModel(
                         isLoading = false,
                         baseCurrency = result.base,
                         rates = result.rates,
-                        fetchedAt = result.fetchedAt,
+                        ratesDate = result.date,
                         isStale = result.isStale,
                     )
                 }

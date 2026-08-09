@@ -14,9 +14,7 @@ private fun previewState() = ConverterUiState(
     rates = mapOf("USD" to 1.09, "GBP" to 0.85, "CHF" to 0.94, "THB" to 38.16),
     fromCurrency = "EUR",
     toCurrency = "THB",
-    // Fest statt System.currentTimeMillis(): Ein wandernder Wert würde die
-    // Preview bei jedem Rendern anders aussehen lassen.
-    fetchedAt = 1_754_500_000_000L,
+    ratesDate = "2026-08-07",
 )
 
 @Composable

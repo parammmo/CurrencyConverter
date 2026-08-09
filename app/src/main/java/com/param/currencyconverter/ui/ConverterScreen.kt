@@ -54,8 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.param.currencyconverter.ConverterUiState
-import java.time.Instant
-import java.time.ZoneId
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -70,7 +69,8 @@ data class ConverterLayoutData(
     val onFromSelected: (String) -> Unit,
     val onToSelected: (String) -> Unit,
     val onSwap: () -> Unit,
-    val fetchedAt: Long?,
+    /** Datum der Kurse laut EZB, ISO-formatiert. */
+    val ratesDate: String?,
     /** Kurse stammen aus einem abgelaufenen Cache, weil das Netz nicht ging. */
     val isStale: Boolean,
     val onReload: () -> Unit,
@@ -168,7 +168,7 @@ fun ConverterScreen(
                 onFromSelected = onFromSelected,
                 onToSelected = onToSelected,
                 onSwap = onSwap,
-                fetchedAt = uiState.fetchedAt,
+                ratesDate = uiState.ratesDate,
                 isStale = uiState.isStale,
                 onReload = onReload,
                 rate = rateBetween(uiState.fromCurrency, uiState.toCurrency, uiState),
@@ -701,11 +701,11 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                data.fetchedAt?.let { fetchedAt ->
+                data.ratesDate?.let { ratesDate ->
                     Text(
                         text = buildString {
                             if (data.isStale) append("Offline · ")
-                            append(formatMinimalTimestamp(fetchedAt))
+                            append("Kurse vom ${formatRatesDate(ratesDate)}")
                         },
                         color = footerColor,
                         fontSize = 12.sp,
@@ -782,8 +782,13 @@ private fun ThemeGlyph(darkTheme: Boolean, tint: Color, onClick: () -> Unit) {
     }
 }
 
-private val MinimalTimestampFormatter =
-    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.GERMANY)
+private val RatesDateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMANY)
 
-private fun formatMinimalTimestamp(millis: Long): String =
-    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(MinimalTimestampFormatter)
+/**
+ * "2026-08-09" → "09.08.2026".
+ *
+ * Bei unerwartetem Format bleibt der Rohwert stehen, statt die Zeile ganz
+ * verschwinden zu lassen — lieber ein ISO-Datum als gar keine Angabe.
+ */
+private fun formatRatesDate(isoDate: String): String =
+    runCatching { LocalDate.parse(isoDate).format(RatesDateFormatter) }.getOrDefault(isoDate)
