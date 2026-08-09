@@ -715,17 +715,15 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ThemeGlyph(
-                    darkTheme = data.darkTheme,
-                    tint = colors.primary,
-                    onClick = data.onToggleTheme,
-                )
-                FooterGlyph(glyph = "⋯", tint = colors.onSurfaceVariant, onClick = {})
-            }
+            // Der Entwurf hat hier noch ein Überlauf-Menü, legt aber nicht
+            // fest, was drinsteht — ohne Inhalt wäre es ein Knopf, der nichts
+            // tut. Nebeneffekt: Links und rechts sind jetzt beide 36dp breit,
+            // dadurch sitzt die Mitte wirklich in der Mitte.
+            ThemeGlyph(
+                darkTheme = data.darkTheme,
+                tint = colors.primary,
+                onClick = data.onToggleTheme,
+            )
         }
     }
 }
