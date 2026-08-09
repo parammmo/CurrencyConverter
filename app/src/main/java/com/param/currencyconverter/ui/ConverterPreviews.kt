@@ -42,6 +42,7 @@ private fun VariantPreview(variant: LayoutVariant, darkTheme: Boolean) {
             onFromSelected = {},
             onToSelected = {},
             onSwap = {},
+            darkTheme = darkTheme,
         )
     }
 }
@@ -66,6 +67,18 @@ private fun SingleCardLight() = VariantPreview(LayoutVariant.SINGLE_CARD, darkTh
 @Composable
 private fun SingleCardDark() = VariantPreview(LayoutVariant.SINGLE_CARD, darkTheme = true)
 
+// --- Variante 3: Taschenrechner (Design-Vorlage) ---
+// heightDp größer: Das Tastenfeld füllt die Resthöhe, in einer kurzen
+// Preview wären die Tasten unrealistisch flach.
+
+@Preview(name = "Taschenrechner – hell", showBackground = true, heightDp = 892, widthDp = 412)
+@Composable
+private fun CalculatorLight() = VariantPreview(LayoutVariant.CALCULATOR, darkTheme = false)
+
+@Preview(name = "Taschenrechner – dunkel", showBackground = true, heightDp = 892, widthDp = 412)
+@Composable
+private fun CalculatorDark() = VariantPreview(LayoutVariant.CALCULATOR, darkTheme = true)
+
 // --- Sonderzustände (variantenunabhängig) ---
 
 @Preview(name = "Lädt", showBackground = true, heightDp = 320)
@@ -78,6 +91,7 @@ private fun LoadingPreview() = PreviewFrame(darkTheme = false) {
         onFromSelected = {},
         onToSelected = {},
         onSwap = {},
+        darkTheme = false,
     )
 }
 
@@ -91,6 +105,7 @@ private fun ErrorPreview() = PreviewFrame(darkTheme = false) {
         onFromSelected = {},
         onToSelected = {},
         onSwap = {},
+        darkTheme = false,
     )
 }
 
@@ -104,5 +119,6 @@ private fun StalePreview() = PreviewFrame(darkTheme = false) {
         onFromSelected = {},
         onToSelected = {},
         onSwap = {},
+        darkTheme = false,
     )
 }

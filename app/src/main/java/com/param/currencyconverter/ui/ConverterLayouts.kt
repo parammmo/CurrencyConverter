@@ -58,6 +58,7 @@ import java.util.Locale
 enum class LayoutVariant(val label: String) {
     CARDS("Zwei Karten"),
     SINGLE_CARD("Eine Karte"),
+    CALCULATOR("Taschenrechner"),
 }
 
 /**
@@ -81,6 +82,13 @@ data class ConverterLayoutData(
     val fetchedAt: Long?,
     val isStale: Boolean,
     val onReload: () -> Unit,
+    /** Wie viele [toCurrency] man für 1 [fromCurrency] bekommt. */
+    val rate: Double?,
+    /**
+     * Nur für Varianten, die eine eigene Palette mitbringen statt
+     * `MaterialTheme.colorScheme` zu benutzen — siehe [CalculatorLayout].
+     */
+    val darkTheme: Boolean,
 )
 
 /**
@@ -123,6 +131,7 @@ fun ConverterContent(
     onFromSelected: (String) -> Unit,
     onToSelected: (String) -> Unit,
     onSwap: () -> Unit,
+    darkTheme: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var amountText by rememberSaveable { mutableStateOf("1") }
@@ -182,11 +191,14 @@ fun ConverterContent(
                 fetchedAt = uiState.fetchedAt,
                 isStale = uiState.isStale,
                 onReload = onReload,
+                rate = convert(1.0, uiState.fromCurrency, uiState.toCurrency, uiState),
+                darkTheme = darkTheme,
             )
 
             when (variant) {
                 LayoutVariant.CARDS -> CardsLayout(data, modifier)
                 LayoutVariant.SINGLE_CARD -> SingleCardLayout(data, modifier)
+                LayoutVariant.CALCULATOR -> CalculatorLayout(data, modifier)
             }
         }
     }
