@@ -16,3 +16,4 @@ local.properties
 
 # Kotlin-Build-Artefakte (Session-Dateien des Compilers)
 .kotlin
+/.idea/deploymentTargetSelector.xml
