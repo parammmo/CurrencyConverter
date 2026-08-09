@@ -124,6 +124,7 @@ fun CurrencyConverterApp() {
                 onToSelected = viewModel::selectToCurrency,
                 onSwap = viewModel::swapCurrencies,
                 darkTheme = darkTheme,
+                onToggleTheme = { viewModel.toggleTheme(currentlyDark = darkTheme) },
                 modifier = Modifier.padding(innerPadding),
             )
         }

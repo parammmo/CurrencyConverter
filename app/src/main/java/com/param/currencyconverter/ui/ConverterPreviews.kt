@@ -43,6 +43,7 @@ private fun VariantPreview(variant: LayoutVariant, darkTheme: Boolean) {
             onToSelected = {},
             onSwap = {},
             darkTheme = darkTheme,
+            onToggleTheme = {},
         )
     }
 }
@@ -79,6 +80,16 @@ private fun CalculatorLight() = VariantPreview(LayoutVariant.CALCULATOR, darkThe
 @Composable
 private fun CalculatorDark() = VariantPreview(LayoutVariant.CALCULATOR, darkTheme = true)
 
+// --- Variante 4: minimal (Design-Vorlage v2) ---
+
+@Preview(name = "Minimal – hell", showBackground = true, heightDp = 892, widthDp = 412)
+@Composable
+private fun MinimalLightPreview() = VariantPreview(LayoutVariant.MINIMAL, darkTheme = false)
+
+@Preview(name = "Minimal – dunkel", showBackground = true, heightDp = 892, widthDp = 412)
+@Composable
+private fun MinimalDarkPreview() = VariantPreview(LayoutVariant.MINIMAL, darkTheme = true)
+
 // --- Sonderzustände (variantenunabhängig) ---
 
 @Preview(name = "Lädt", showBackground = true, heightDp = 320)
@@ -92,6 +103,7 @@ private fun LoadingPreview() = PreviewFrame(darkTheme = false) {
         onToSelected = {},
         onSwap = {},
         darkTheme = false,
+        onToggleTheme = {},
     )
 }
 
@@ -106,6 +118,7 @@ private fun ErrorPreview() = PreviewFrame(darkTheme = false) {
         onToSelected = {},
         onSwap = {},
         darkTheme = false,
+        onToggleTheme = {},
     )
 }
 
@@ -120,5 +133,6 @@ private fun StalePreview() = PreviewFrame(darkTheme = false) {
         onToSelected = {},
         onSwap = {},
         darkTheme = false,
+        onToggleTheme = {},
     )
 }

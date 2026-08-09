@@ -59,6 +59,7 @@ enum class LayoutVariant(val label: String) {
     CARDS("Zwei Karten"),
     SINGLE_CARD("Eine Karte"),
     CALCULATOR("Taschenrechner"),
+    MINIMAL("Minimal"),
 }
 
 /**
@@ -89,6 +90,8 @@ data class ConverterLayoutData(
      * `MaterialTheme.colorScheme` zu benutzen — siehe [CalculatorLayout].
      */
     val darkTheme: Boolean,
+    /** Nur die Minimal-Variante hat den Theme-Umschalter im Screen selbst. */
+    val onToggleTheme: () -> Unit,
 )
 
 /**
@@ -132,6 +135,7 @@ fun ConverterContent(
     onToSelected: (String) -> Unit,
     onSwap: () -> Unit,
     darkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var amountText by rememberSaveable { mutableStateOf("1") }
@@ -193,12 +197,14 @@ fun ConverterContent(
                 onReload = onReload,
                 rate = convert(1.0, uiState.fromCurrency, uiState.toCurrency, uiState),
                 darkTheme = darkTheme,
+                onToggleTheme = onToggleTheme,
             )
 
             when (variant) {
                 LayoutVariant.CARDS -> CardsLayout(data, modifier)
                 LayoutVariant.SINGLE_CARD -> SingleCardLayout(data, modifier)
                 LayoutVariant.CALCULATOR -> CalculatorLayout(data, modifier)
+                LayoutVariant.MINIMAL -> MinimalCalculatorLayout(data, modifier)
             }
         }
     }
