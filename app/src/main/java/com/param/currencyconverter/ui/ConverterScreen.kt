@@ -3,7 +3,6 @@ package com.param.currencyconverter.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,10 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -733,63 +731,37 @@ private fun FooterGlyph(glyph: String, tint: Color, onClick: () -> Unit) {
 }
 
 /**
- * Mond bzw. Sonne als gezeichnete Formen — der Entwurf schreibt ausdrücklich
- * keine Icon-Schrift vor.
+ * Mond bzw. Sonne für den Theme-Umschalter.
  *
- * Der Mond entsteht wie im Prototyp: ein Kreis minus derselbe Kreis, um
- * (-4.5, -3) versetzt. Übrig bleibt die Sichel. In CSS macht das ein
- * `inset box-shadow`, in Compose eine Pfad-Differenz.
+ * Abweichung vom Handoff, der hier ausdrücklich gezeichnete Formen verlangt
+ * (Kreis mit Sichel bzw. Ring mit Punkt). Die Material-Symbole sind als
+ * Sonne und Mond schlicht besser lesbar, und sie passen zu den übrigen
+ * Fußzeilen-Symbolen statt danebenzustehen.
+ *
+ * Das Icon zeigt das *Ziel*, nicht den Ist-Zustand: im Dunkeln die Sonne,
+ * also "hier geht's nach hell".
  */
 @Composable
 private fun ThemeGlyph(darkTheme: Boolean, tint: Color, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(22.dp)
+            // 36dp wie die übrigen Fußzeilen-Symbole. Der Handoff sieht hier
+            // nur 22dp vor — das ist als Tippziel zu klein.
+            .size(36.dp)
             .clip(CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        if (darkTheme) {
-            // Im Dunkeln die Sonne: Ring plus Punkt.
-            Box(
-                modifier = Modifier.size(15.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(
-                        color = tint,
-                        radius = size.minDimension / 2 - 0.75.dp.toPx(),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(
-                            width = 1.5.dp.toPx(),
-                        ),
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(7.dp)
-                        .clip(CircleShape)
-                        .background(tint),
-                )
-            }
-        } else {
-            Canvas(modifier = Modifier.size(13.dp)) {
-                val full = Path().apply {
-                    addOval(Rect(0f, 0f, size.width, size.height))
-                }
-                val cut = Path().apply {
-                    addOval(
-                        Rect(
-                            -4.5.dp.toPx(),
-                            -3.dp.toPx(),
-                            size.width - 4.5.dp.toPx(),
-                            size.height - 3.dp.toPx(),
-                        )
-                    )
-                }
-                val crescent = Path().apply { op(full, cut, PathOperation.Difference) }
-                drawPath(crescent, tint)
-            }
-        }
+        Icon(
+            imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+            contentDescription = if (darkTheme) {
+                "Zu hellem Design wechseln"
+            } else {
+                "Zu dunklem Design wechseln"
+            },
+            tint = tint,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
