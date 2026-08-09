@@ -9,12 +9,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -434,27 +436,8 @@ private fun MinimalKeyButton(
     val pressed by interactionSource.collectIsPressedAsState()
     val isEquals = key.kind == MinimalKeyKind.EQUALS
 
-    // Die gefüllte "="-Taste schrumpft weniger und wird nicht transparent —
-    // eine Fläche, die durchscheinend wird, sieht nach Fehler aus.
-    val scale by animateFloatAsState(
-        targetValue = if (!pressed) 1f else if (isEquals) 0.92f else 0.9f,
-        animationSpec = tween(100),
-        label = "minimalKeyScale",
-    )
-    val contentAlpha by animateFloatAsState(
-        targetValue = if (pressed && !isEquals) 0.6f else 1f,
-        animationSpec = tween(100),
-        label = "minimalKeyAlpha",
-    )
-
     Box(
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                alpha = contentAlpha
-            }
-            // Radius nur fürs Tippziel — sichtbar ist hier nichts.
             .clip(RoundedCornerShape(20.dp))
             .clickable(
                 interactionSource = interactionSource,
@@ -463,25 +446,90 @@ private fun MinimalKeyButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (isEquals) {
-            Box(
-                modifier = Modifier
-                    .size(62.dp)
-                    .clip(CircleShape)
-                    .background(palette.filledAccent),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = key.label, color = OnAccent, fontSize = 30.sp, fontWeight = FontWeight.Medium)
-            }
-        } else {
-            val (color, fontSize) = when (key.kind) {
-                MinimalKeyKind.DIGIT -> palette.digit to 28.sp
-                MinimalKeyKind.OPERATOR -> palette.accent to 30.sp
-                MinimalKeyKind.UTILITY -> palette.secondary to if (key.code == "swap") 24.sp else 22.sp
-                MinimalKeyKind.EQUALS -> palette.accent to 30.sp
-            }
-            Text(text = key.label, color = color, fontSize = fontSize, fontWeight = FontWeight.Medium)
-        }
+        if (isEquals) EqualsKey(key, palette, pressed) else GlyphKey(key, palette, pressed)
+    }
+}
+
+/**
+ * Schwebende Taste ohne Fläche.
+ *
+ * Zwei bewusste Abweichungen von der Vorlage (dort: `scale(0.9)` +
+ * `opacity 0.6` auf die ganze Taste):
+ *
+ * 1. **Kein `graphicsLayer`-Scale mehr.** Der rastert den Text einmal und
+ *    staucht dann das Pixelbild — die Glyphe wird beim Drücken sichtbar
+ *    unscharf. Stattdessen wandert die Schriftgröße selbst, dann zeichnet
+ *    Compose die Schrift in jeder Zwischengröße neu und sie bleibt scharf.
+ * 2. **Runder Schimmer statt Abdunkeln.** Die Trefferfläche ist eine breite
+ *    rechteckige Zelle; passiert darin nur ein Schrumpfen, fühlt sich das
+ *    Feedback rechteckig an. Ein Kreis unter dem Finger sagt "hier ist der
+ *    Druckpunkt" und passt zur runden "="-Taste.
+ */
+@Composable
+private fun GlyphKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean) {
+    val (color, restingSize) = when (key.kind) {
+        MinimalKeyKind.DIGIT -> palette.digit to 28f
+        MinimalKeyKind.OPERATOR -> palette.accent to 30f
+        else -> palette.secondary to if (key.code == "swap") 24f else 22f
+    }
+
+    val fontSize by animateFloatAsState(
+        targetValue = if (pressed) restingSize * 0.92f else restingSize,
+        animationSpec = tween(if (pressed) 90 else 160),
+        label = "minimalKeyFontSize",
+    )
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (pressed) 0.14f else 0f,
+        animationSpec = tween(if (pressed) 90 else 160),
+        label = "minimalKeyScrim",
+    )
+
+    // Der Kreis ist so groß wie die Zelle hoch ist — dadurch passt er in
+    // jede Zeilenhöhe, ohne dass wir eine feste dp-Zahl raten müssen.
+    if (scrimAlpha > 0f) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .aspectRatio(1f)
+                .clip(CircleShape)
+                .background(palette.accent.copy(alpha = scrimAlpha)),
+        )
+    }
+
+    Text(
+        text = key.label,
+        color = color,
+        fontSize = fontSize.sp,
+        fontWeight = FontWeight.Medium,
+    )
+}
+
+/**
+ * Die einzige gefüllte Taste. Hier animiert der **Durchmesser** statt eines
+ * Layer-Scales: Der Kreis ist eine gezeichnete Form und bleibt bei jeder
+ * Größe scharf, und das "=" darin wird ebenfalls neu gesetzt statt gestaucht.
+ */
+@Composable
+private fun EqualsKey(key: MinimalKey, palette: MinimalPalette, pressed: Boolean) {
+    val diameter by animateFloatAsState(
+        targetValue = if (pressed) 57f else 62f,
+        animationSpec = tween(if (pressed) 90 else 160),
+        label = "minimalEqualsSize",
+    )
+
+    Box(
+        modifier = Modifier
+            .size(diameter.dp)
+            .clip(CircleShape)
+            .background(palette.filledAccent),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = key.label,
+            color = OnAccent,
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 

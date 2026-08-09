@@ -75,7 +75,7 @@ fun CurrencyConverterApp() {
     // Bewusst nur `rememberSaveable`, nicht im DataStore: Die Layout-Wahl ist
     // ein Entwurfswerkzeug und fliegt wieder raus, sobald wir uns entschieden
     // haben. Was temporär ist, soll auch nicht persistiert werden.
-    var layoutVariant by rememberSaveable { mutableStateOf(LayoutVariant.CARDS) }
+    var layoutVariant by rememberSaveable { mutableStateOf(LayoutVariant.MINIMAL) }
 
     // Der gespeicherte Wunsch wird hier zur konkreten Ja/Nein-Frage aufgelöst.
     // SYSTEM ist kein dritter Zeichenmodus — es heißt nur "frag das Gerät".
