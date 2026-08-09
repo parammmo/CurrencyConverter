@@ -7,24 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,8 +20,7 @@ import com.param.currencyconverter.data.ExchangeRateRepository
 import com.param.currencyconverter.data.ThemeMode
 import com.param.currencyconverter.data.UserPreferencesRepository
 import com.param.currencyconverter.data.remote.NetworkModule
-import com.param.currencyconverter.ui.ConverterContent
-import com.param.currencyconverter.ui.LayoutVariant
+import com.param.currencyconverter.ui.ConverterScreen
 import com.param.currencyconverter.ui.theme.CurrencyConverterTheme
 
 class MainActivity : ComponentActivity() {
@@ -55,8 +39,11 @@ class MainActivity : ComponentActivity() {
  *
  * Das muss *über* [CurrencyConverterTheme] passieren — das Theme umschließt
  * alles andere, also kann die Entscheidung nicht weiter unten im Baum fallen.
+ *
+ * Ohne TopAppBar: Der Entwurf füllt den Bildschirm bis unter die Statusleiste,
+ * und den Theme-Umschalter trägt die Fußzeile. Eine Titelleiste würde nur
+ * Platz kosten und den Namen wiederholen, den schon das App-Icon nennt.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrencyConverterApp() {
     val context = LocalContext.current
@@ -72,11 +59,6 @@ fun CurrencyConverterApp() {
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Bewusst nur `rememberSaveable`, nicht im DataStore: Die Layout-Wahl ist
-    // ein Entwurfswerkzeug und fliegt wieder raus, sobald wir uns entschieden
-    // haben. Was temporär ist, soll auch nicht persistiert werden.
-    var layoutVariant by rememberSaveable { mutableStateOf(LayoutVariant.MINIMAL) }
-
     // Der gespeicherte Wunsch wird hier zur konkreten Ja/Nein-Frage aufgelöst.
     // SYSTEM ist kein dritter Zeichenmodus — es heißt nur "frag das Gerät".
     val darkTheme = when (uiState.themeMode) {
@@ -86,38 +68,10 @@ fun CurrencyConverterApp() {
     }
 
     CurrencyConverterTheme(darkTheme = darkTheme) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    title = { Text("Währungsrechner") },
-                    actions = {
-                        LayoutVariantPicker(
-                            selected = layoutVariant,
-                            onSelect = { layoutVariant = it },
-                        )
-                        IconButton(onClick = { viewModel.toggleTheme(currentlyDark = darkTheme) }) {
-                            Icon(
-                                // Das Icon zeigt das *Ziel*, nicht den Ist-Zustand:
-                                // im Dunkeln die Sonne ("hier geht's nach hell").
-                                imageVector = if (darkTheme) {
-                                    Icons.Default.LightMode
-                                } else {
-                                    Icons.Default.DarkMode
-                                },
-                                contentDescription = if (darkTheme) {
-                                    "Zu hellem Design wechseln"
-                                } else {
-                                    "Zu dunklem Design wechseln"
-                                },
-                            )
-                        }
-                    },
-                )
-            },
-        ) { innerPadding ->
-            ConverterContent(
-                variant = layoutVariant,
+        // Das Scaffold bleibt allein wegen der Fenster-Insets: Es rechnet aus,
+        // wie viel Platz Status- und Navigationsleiste brauchen.
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            ConverterScreen(
                 uiState = uiState,
                 onReload = { viewModel.loadRates() },
                 onFromSelected = viewModel::selectFromCurrency,
@@ -126,45 +80,6 @@ fun CurrencyConverterApp() {
                 darkTheme = darkTheme,
                 onToggleTheme = { viewModel.toggleTheme(currentlyDark = darkTheme) },
                 modifier = Modifier.padding(innerPadding),
-            )
-        }
-    }
-}
-
-/**
- * Temporärer Umschalter zwischen den Layout-Entwürfen.
- *
- * Previews zeigen die Varianten nebeneinander, aber nicht, wie sich Tippen
- * anfühlt oder ob die Tastatur etwas verdeckt. Dafür ist dieser Schalter da —
- * er wandert wieder raus, wenn die Entscheidung gefallen ist.
- */
-@Composable
-private fun LayoutVariantPicker(
-    selected: LayoutVariant,
-    onSelect: (LayoutVariant) -> Unit,
-) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
-    IconButton(onClick = { expanded = true }) {
-        Icon(
-            imageVector = Icons.Default.Tune,
-            contentDescription = "Layout-Variante wählen",
-        )
-    }
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        LayoutVariant.entries.forEach { variant ->
-            DropdownMenuItem(
-                text = { Text(variant.label) },
-                leadingIcon = {
-                    RadioButton(
-                        selected = variant == selected,
-                        onClick = null, // Klick behandelt das ganze MenuItem
-                    )
-                },
-                onClick = {
-                    onSelect(variant)
-                    expanded = false
-                },
             )
         }
     }

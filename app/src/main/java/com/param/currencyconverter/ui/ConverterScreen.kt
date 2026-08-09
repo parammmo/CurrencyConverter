@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.param.currencyconverter.ConverterUiState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -105,6 +107,124 @@ private val MinimalDark = MinimalPalette(
 
 private val OnAccent = Color(0xFFFFF5EE)
 
+/**
+ * Alles, was das Layout zum Zeichnen braucht — gebündelt, damit die einzelnen
+ * Bausteine nicht ein Dutzend Parameter durchreichen müssen.
+ */
+data class ConverterLayoutData(
+    val fromCurrency: String,
+    val toCurrency: String,
+    val currencies: List<String>,
+    val onFromSelected: (String) -> Unit,
+    val onToSelected: (String) -> Unit,
+    val onSwap: () -> Unit,
+    val fetchedAt: Long?,
+    val onReload: () -> Unit,
+    /** Wie viele [toCurrency] man für 1 [fromCurrency] bekommt. */
+    val rate: Double?,
+    val darkTheme: Boolean,
+    val onToggleTheme: () -> Unit,
+)
+
+/**
+ * Umrechnungskurs zwischen zwei Währungen, ausgehend von Kursen, die alle
+ * relativ zur Basiswährung sind (so liefert die API sie).
+ *
+ * Zweistufig: erst von [from] auf die Basiswährung, dann auf [to] — genau wie
+ * beim Geldwechsel über eine gemeinsame Referenzwährung.
+ */
+private fun rateBetween(from: String, to: String, state: ConverterUiState): Double? {
+    fun rateOf(code: String): Double? =
+        if (code == state.baseCurrency) 1.0 else state.rates[code]
+
+    val fromRate = rateOf(from) ?: return null
+    val toRate = rateOf(to) ?: return null
+    return toRate / fromRate
+}
+
+/**
+ * Einstiegspunkt der UI: Lade-, Fehler- und Erfolgszustand.
+ *
+ * Auch die beiden Sonderzustände nutzen die Terracotta-Palette dieses
+ * Entwurfs, nicht `MaterialTheme.colorScheme` — sonst blitzte beim Laden
+ * kurz das alte Teal-Schema auf.
+ */
+@Composable
+fun ConverterScreen(
+    uiState: ConverterUiState,
+    onReload: () -> Unit,
+    onFromSelected: (String) -> Unit,
+    onToSelected: (String) -> Unit,
+    onSwap: () -> Unit,
+    darkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = if (darkTheme) MinimalDark else MinimalLight
+
+    when {
+        uiState.isLoading -> Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(palette.appBackground),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(color = palette.accent)
+        }
+
+        uiState.error != null -> Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(palette.appBackground)
+                .padding(24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                Text(text = uiState.error, color = palette.amount, fontSize = 16.sp)
+                // Heuristik 5: nicht nur melden, sondern einen Weg zurück
+                // anbieten. Als gefüllte Pille — dieselbe Rolle wie die
+                // "="-Taste: die eine Aktion, die man jetzt tun soll.
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(palette.filledAccent)
+                        .clickable(onClick = onReload)
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                ) {
+                    Text(
+                        text = "Erneut versuchen",
+                        color = OnAccent,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+        }
+
+        else -> ConverterLayout(
+            data = ConverterLayoutData(
+                fromCurrency = uiState.fromCurrency,
+                toCurrency = uiState.toCurrency,
+                currencies = remember(uiState.rates, uiState.baseCurrency) {
+                    (uiState.rates.keys + uiState.baseCurrency).sorted()
+                },
+                onFromSelected = onFromSelected,
+                onToSelected = onToSelected,
+                onSwap = onSwap,
+                fetchedAt = uiState.fetchedAt,
+                onReload = onReload,
+                rate = rateBetween(uiState.fromCurrency, uiState.toCurrency, uiState),
+                darkTheme = darkTheme,
+                onToggleTheme = onToggleTheme,
+            ),
+            modifier = modifier,
+        )
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Tastenfeld (v2 — andere Belegung als v1)
 // ---------------------------------------------------------------------------
@@ -113,7 +233,7 @@ private enum class MinimalKeyKind { DIGIT, OPERATOR, UTILITY, EQUALS }
 
 private data class MinimalKey(val label: String, val code: String, val kind: MinimalKeyKind)
 
-/** In v2 wandert `%` nach oben und `⇅` in die letzte Zeile. */
+/** Belegung laut Handoff: `%` oben, `⇅` in der letzten Zeile. */
 private val MinimalKeyRows: List<List<MinimalKey>> = listOf(
     listOf(
         MinimalKey("C", "C", MinimalKeyKind.UTILITY),
@@ -152,11 +272,9 @@ private val MinimalKeyRows: List<List<MinimalKey>> = listOf(
 // ---------------------------------------------------------------------------
 
 /**
- * Umsetzung von `design/v2`.
+ * Umsetzung von `design/v2` — das gewählte Design.
  *
- * Gegenentwurf zu [CalculatorLayout] mit derselben Rechnerlogik, aber
- * radikal reduzierter Darstellung: keine Karten, keine Tastenflächen, keine
- * Rahmen. Struktur entsteht nur durch Haarlinien, Weißraum und Farbe.
+ * Keine Karten, keine Tastenflächen, keine Rahmen. Struktur entsteht nur durch Haarlinien, Weißraum und Farbe.
  *
  * Die drei Kernideen des Entwurfs:
  * - **Fokus durch Abdunkeln** statt durch einen Rahmen — die inaktive Zeile
@@ -168,7 +286,7 @@ private val MinimalKeyRows: List<List<MinimalKey>> = listOf(
  *   auf der Trennlinie und tauschen die Währungen.
  */
 @Composable
-fun MinimalCalculatorLayout(data: ConverterLayoutData, modifier: Modifier = Modifier) {
+private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modifier) {
     val palette = if (data.darkTheme) MinimalDark else MinimalLight
     // Der Entwurf verlangt einen weichen Übergang beim Themenwechsel (~350ms).
     val background by animateColorAsState(
@@ -183,6 +301,9 @@ fun MinimalCalculatorLayout(data: ConverterLayoutData, modifier: Modifier = Modi
     val converted = data.rate?.let {
         formatAmount(if (calc.activeTop) entered * it else entered / it)
     } ?: "—"
+    // Was beim Seitenwechsel übernommen wird. Ohne Kurs steht in der anderen
+    // Zeile "—", und das wäre als Eingabe unbrauchbar.
+    val carryOver = if (data.rate != null) converted else "0"
 
     Column(
         modifier = modifier
@@ -195,8 +316,21 @@ fun MinimalCalculatorLayout(data: ConverterLayoutData, modifier: Modifier = Modi
             topAmount = if (calc.activeTop) calc.entry else converted,
             bottomAmount = if (calc.activeTop) converted else calc.entry,
             activeTop = calc.activeTop,
-            onFocusTop = { calc = CalcState(activeTop = true) },
-            onFocusBottom = { calc = CalcState(activeTop = false) },
+            // Abweichung vom Handoff ("resets entry to 0"): Der Wert, der in
+            // der angetippten Zeile ohnehin schon steht, wird zur Eingabe.
+            // Dadurch springt beim Seitenwechsel optisch nichts — es wechselt
+            // nur, welche Zeile hell ist. Ein Zurücksetzen auf 0 würde eine
+            // gerade eingetippte Rechnung wegwerfen.
+            //
+            // Eine angefangene Rechenoperation fällt trotzdem weg: Ein
+            // "12 +" bezog sich auf die alte Währung und wäre nach dem
+            // Wechsel sinnlos.
+            onFocusTop = {
+                if (!calc.activeTop) calc = CalcState(entry = carryOver, activeTop = true)
+            },
+            onFocusBottom = {
+                if (calc.activeTop) calc = CalcState(entry = carryOver, activeTop = false)
+            },
         )
 
         MinimalKeypad(
