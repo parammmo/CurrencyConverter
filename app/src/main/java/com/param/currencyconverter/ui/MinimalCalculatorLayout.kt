@@ -281,7 +281,14 @@ private fun CurrencyRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onFocus)
+            // Ohne indication: Eine Ripple über die volle Zeilenbreite wäre ein
+            // riesiges Rechteck. Die Rückmeldung ist ohnehin das Aufhellen der
+            // Zeile von 45% auf volle Deckkraft.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onFocus,
+            )
             // Deckkraft auf die *ganze* Zeile, nicht auf einzelne Texte —
             // sonst müsste man für jeden Farbwert eine gedimmte Variante pflegen.
             .alpha(if (active) 1f else 0.45f)
@@ -298,7 +305,10 @@ private fun CurrencyRow(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.14.em,
-                modifier = Modifier.clickable { pickerOpen = true },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(percent = 50))
+                    .clickable { pickerOpen = true }
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
             )
             DropdownMenu(expanded = pickerOpen, onDismissRequest = { pickerOpen = false }) {
                 options.forEach { option ->
@@ -354,11 +364,41 @@ private fun SwapCircles(
     onSwap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+
+    // Jeder Tausch dreht das Icon um eine weitere halbe Umdrehung. Der Wert
+    // wächst also immer weiter — das ist Absicht: animateFloatAsState dreht
+    // dadurch immer in dieselbe Richtung statt zwischen 0 und 180 zu pendeln.
+    var halfTurns by remember { mutableStateOf(0) }
+    val rotation by animateFloatAsState(
+        targetValue = halfTurns * 180f,
+        animationSpec = tween(320),
+        label = "swapRotation",
+    )
+
+    // Wie bei der "="-Taste der Durchmesser statt eines Layer-Scales.
+    val diameter by animateFloatAsState(
+        targetValue = if (pressed) 45f else 48f,
+        animationSpec = tween(if (pressed) 90 else 160),
+        label = "swapDiameter",
+    )
+
     Box(
         modifier = modifier
             .width(74.dp)
             .height(48.dp)
-            .clickable(onClick = onSwap),
+            // indication = null: Die Standard-Ripple füllt den rechteckigen
+            // Rahmen dieser Box und leuchtet als Kasten hinter den Kreisen auf.
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    halfTurns++
+                    onSwap()
+                },
+            ),
+        contentAlignment = Alignment.CenterStart,
     ) {
         Box(
             modifier = Modifier
@@ -369,20 +409,20 @@ private fun SwapCircles(
         )
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(diameter.dp)
                 .clip(CircleShape)
                 .background(palette.filledAccent),
             contentAlignment = Alignment.Center,
         ) {
-            // Vektor-Icon statt des Textzeichens "⇅": Ein Glyph wird über seine
-            // Zeilenbox zentriert (inkl. Ober-/Unterlänge), nicht über die
-            // sichtbare Form — deshalb saß es sichtbar zu hoch. Der Handoff
-            // verlangt für ⌫ ⇅ ↻ ⋯ ohnehin die Material-Symbols-Entsprechung.
             Icon(
                 imageVector = Icons.Default.SwapVert,
                 contentDescription = "Währungen tauschen",
                 tint = OnAccent,
-                modifier = Modifier.size(26.dp),
+                modifier = Modifier
+                    .size(26.dp)
+                    // Vektorgrafik: Drehen per graphicsLayer ist hier
+                    // unbedenklich, anders als bei Text bleibt sie scharf.
+                    .graphicsLayer { rotationZ = rotation },
             )
         }
     }
@@ -544,12 +584,7 @@ private fun MinimalFooter(data: ConverterLayoutData, palette: MinimalPalette) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "↻",
-                color = palette.secondary,
-                fontSize = 18.sp,
-                modifier = Modifier.clickable(onClick = data.onReload),
-            )
+            FooterGlyph(glyph = "↻", tint = palette.secondary, onClick = data.onReload)
 
             // Kurs und Zeitpunkt in *einer* Zeile, getrennt durch einen
             // Mittelpunkt — v1 stapelte beides noch übereinander.
@@ -578,9 +613,26 @@ private fun MinimalFooter(data: ConverterLayoutData, palette: MinimalPalette) {
                     tint = palette.accent,
                     onClick = data.onToggleTheme,
                 )
-                Text(text = "⋯", color = palette.secondary, fontSize = 18.sp)
+                FooterGlyph(glyph = "⋯", tint = palette.secondary, onClick = {})
             }
         }
+    }
+}
+
+/**
+ * Kleines Fußzeilen-Symbol mit runder Trefferfläche. Ohne den Kreis-Clip
+ * würde die Ripple als Rechteck um die Glyphe aufleuchten.
+ */
+@Composable
+private fun FooterGlyph(glyph: String, tint: Color, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = glyph, color = tint, fontSize = 18.sp)
     }
 }
 
