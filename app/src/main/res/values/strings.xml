@@ -1,3 +1,41 @@
 <resources>
-    <string name="app_name">Währungsrechner</string>
+    <!--
+      Standardsprache der App ist Englisch; die deutschen Texte liegen in
+      values-de/. Android wählt anhand der Gerätesprache aus und fällt auf
+      diese Datei zurück, wenn es für die Sprache keine Übersetzung gibt.
+    -->
+    <string name="app_name">Currency Converter</string>
+
+    <!-- Zustände -->
+    <string name="error_rates_load_failed">Couldn\'t load rates</string>
+    <string name="action_try_again">Try again</string>
+
+    <!-- Fußzeile -->
+    <string name="rate_line">1 %1$s = %2$s %3$s</string>
+    <string name="rate_unavailable">No rate available</string>
+
+    <!--
+      "Just now" heißt hier "aktuell", nicht "vor einer Sekunde": Solange der
+      Cache innerhalb der TTL liegt, gelten die Kurse als frisch.
+    -->
+    <string name="rates_just_now">Just now</string>
+    <string name="rates_offline">Offline · %1$s</string>
+
+    <plurals name="rates_age_hours">
+        <item quantity="one">%d hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="rates_age_days">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+
+    <!-- Nur für Screenreader, nicht sichtbar -->
+    <string name="cd_swap_currencies">Swap currencies</string>
+    <string name="cd_refresh_rates">Refresh rates</string>
+    <string name="cd_select_currency">Select currency, currently %1$s</string>
+    <string name="cd_switch_to_light">Switch to light theme</string>
+    <string name="cd_switch_to_dark">Switch to dark theme</string>
+    <string name="cd_clear">Clear</string>
+    <string name="cd_backspace">Delete last digit</string>
 </resources>

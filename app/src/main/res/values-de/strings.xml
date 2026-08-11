@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">Währungsrechner</string>
+
+    <!-- Zustände -->
+    <string name="error_rates_load_failed">Kurse konnten nicht geladen werden</string>
+    <string name="action_try_again">Erneut versuchen</string>
+
+    <!-- Fußzeile -->
+    <string name="rate_line">1 %1$s = %2$s %3$s</string>
+    <string name="rate_unavailable">Kein Kurs verfügbar</string>
+
+    <string name="rates_just_now">Gerade eben</string>
+    <string name="rates_offline">Offline · %1$s</string>
+
+    <plurals name="rates_age_hours">
+        <item quantity="one">vor %d Stunde</item>
+        <item quantity="other">vor %d Stunden</item>
+    </plurals>
+    <plurals name="rates_age_days">
+        <item quantity="one">vor %d Tag</item>
+        <item quantity="other">vor %d Tagen</item>
+    </plurals>
+
+    <!-- Nur für Screenreader, nicht sichtbar -->
+    <string name="cd_swap_currencies">Währungen tauschen</string>
+    <string name="cd_refresh_rates">Kurse neu laden</string>
+    <string name="cd_select_currency">Währung wählen, aktuell %1$s</string>
+    <string name="cd_switch_to_light">Zu hellem Design wechseln</string>
+    <string name="cd_switch_to_dark">Zu dunklem Design wechseln</string>
+    <string name="cd_clear">Eingabe löschen</string>
+    <string name="cd_backspace">Letzte Ziffer löschen</string>
+</resources>

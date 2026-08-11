@@ -14,7 +14,7 @@ private fun previewState() = ConverterUiState(
     rates = mapOf("USD" to 1.09, "GBP" to 0.85, "CHF" to 0.94, "THB" to 38.16),
     fromCurrency = "EUR",
     toCurrency = "THB",
-    ratesDate = "2026-08-07",
+    fetchedAt = 1_754_500_000_000L,
 )
 
 @Composable
@@ -52,13 +52,13 @@ private fun LoadingPreview() =
 @Preview(name = "Fehler", showBackground = true, widthDp = 412, heightDp = 400)
 @Composable
 private fun ErrorPreview() = PreviewScreen(
-    ConverterUiState(error = "Kurse konnten nicht geladen werden"),
+    ConverterUiState(hasError = true),
     darkTheme = false,
 )
 
 @Preview(name = "Fehler – dunkel", showBackground = true, widthDp = 412, heightDp = 400)
 @Composable
 private fun ErrorDarkPreview() = PreviewScreen(
-    ConverterUiState(error = "Kurse konnten nicht geladen werden"),
+    ConverterUiState(hasError = true),
     darkTheme = true,
 )

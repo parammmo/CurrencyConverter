@@ -20,15 +20,15 @@ data class ConverterUiState(
     val isLoading: Boolean = false,
     val baseCurrency: String = "EUR",
     val rates: Map<String, Double> = emptyMap(),
-    val error: String? = null,
+    /**
+     * Nur ein Ja/Nein: Welcher Text daraus wird, entscheidet die UI — sonst
+     * müsste das ViewModel Ressourcen kennen und wäre nicht übersetzbar.
+     */
+    val hasError: Boolean = false,
     val fromCurrency: String = UserPreferencesRepository.DEFAULT_FROM,
     val toCurrency: String = UserPreferencesRepository.DEFAULT_TO,
-    /**
-     * Datum der Kurse laut EZB (ISO, z.B. "2026-08-09") — nicht der Zeitpunkt
-     * unseres Abrufs. Die EZB veröffentlicht einmal täglich; dieses Datum sagt
-     * also, wie aktuell die Zahlen wirklich sind.
-     */
-    val ratesDate: String? = null,
+    /** Unix-Millis des letzten erfolgreichen Netzabrufs, null = noch nie geladen. */
+    val fetchedAt: Long? = null,
     /** Kurse stammen aus einem abgelaufenen Cache, weil das Netz nicht ging. */
     val isStale: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -98,7 +98,7 @@ class CurrencyViewModel(
 
     fun loadRates(base: String = _uiState.value.baseCurrency) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, hasError = false) }
             try {
                 val result = repository.getRates(base)
                 _uiState.update {
@@ -106,7 +106,7 @@ class CurrencyViewModel(
                         isLoading = false,
                         baseCurrency = result.base,
                         rates = result.rates,
-                        ratesDate = result.date,
+                        fetchedAt = result.fetchedAt,
                         isStale = result.isStale,
                     )
                 }
@@ -116,7 +116,7 @@ class CurrencyViewModel(
                 // Timeout, kein Netz, Server-Fehler landen alle in der UI
                 // als derselbe Zustand "Kurse nicht verfügbar".
                 _uiState.update {
-                    it.copy(isLoading = false, error = "Kurse konnten nicht geladen werden")
+                    it.copy(isLoading = false, hasError = true)
                 }
             }
         }

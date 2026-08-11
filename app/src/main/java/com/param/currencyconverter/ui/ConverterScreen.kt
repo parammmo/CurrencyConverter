@@ -46,6 +46,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,8 +58,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.param.currencyconverter.ConverterUiState
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import com.param.currencyconverter.R
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 /**
@@ -69,8 +73,8 @@ data class ConverterLayoutData(
     val onFromSelected: (String) -> Unit,
     val onToSelected: (String) -> Unit,
     val onSwap: () -> Unit,
-    /** Datum der Kurse laut EZB, ISO-formatiert. */
-    val ratesDate: String?,
+    /** Unix-Millis des letzten Netzabrufs. */
+    val fetchedAt: Long?,
     /** Kurse stammen aus einem abgelaufenen Cache, weil das Netz nicht ging. */
     val isStale: Boolean,
     val onReload: () -> Unit,
@@ -126,7 +130,7 @@ fun ConverterScreen(
             CircularProgressIndicator(color = colors.primary)
         }
 
-        uiState.error != null -> Box(
+        uiState.hasError -> Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(colors.background)
@@ -137,7 +141,11 @@ fun ConverterScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Text(text = uiState.error, color = colors.onBackground, fontSize = 16.sp)
+                Text(
+                    text = stringResource(R.string.error_rates_load_failed),
+                    color = colors.onBackground,
+                    fontSize = 16.sp,
+                )
                 // Heuristik 5: nicht nur melden, sondern einen Weg zurück
                 // anbieten. Als gefüllte Pille — dieselbe Rolle wie die
                 // "="-Taste: die eine Aktion, die man jetzt tun soll.
@@ -149,7 +157,7 @@ fun ConverterScreen(
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
                     Text(
-                        text = "Erneut versuchen",
+                        text = stringResource(R.string.action_try_again),
                         color = colors.onPrimaryContainer,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
@@ -168,7 +176,7 @@ fun ConverterScreen(
                 onFromSelected = onFromSelected,
                 onToSelected = onToSelected,
                 onSwap = onSwap,
-                ratesDate = uiState.ratesDate,
+                fetchedAt = uiState.fetchedAt,
                 isStale = uiState.isStale,
                 onReload = onReload,
                 rate = rateBetween(uiState.fromCurrency, uiState.toCurrency, uiState),
@@ -275,8 +283,8 @@ private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modi
         CurrencySection(
             data = data,
             colors = colors,
-            topAmount = if (calc.activeTop) calc.entry else converted,
-            bottomAmount = if (calc.activeTop) converted else calc.entry,
+            topAmount = (if (calc.activeTop) calc.entry else converted).withDecimalSeparator(),
+            bottomAmount = (if (calc.activeTop) converted else calc.entry).withDecimalSeparator(),
             activeTop = calc.activeTop,
             // Abweichung vom Handoff ("resets entry to 0"): Der Wert, der in
             // der angetippten Zeile ohnehin schon steht, wird zur Eingabe.
@@ -401,7 +409,9 @@ private fun CurrencyRow(
                 letterSpacing = 0.14.em,
                 modifier = Modifier
                     .clip(RoundedCornerShape(percent = 50))
-                    .clickable { pickerOpen = true }
+                    .clickable(
+                        onClickLabel = stringResource(R.string.cd_select_currency, code),
+                    ) { pickerOpen = true }
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             )
             DropdownMenu(expanded = pickerOpen, onDismissRequest = { pickerOpen = false }) {
@@ -510,7 +520,7 @@ private fun SwapCircles(
         ) {
             Icon(
                 imageVector = Icons.Default.SwapVert,
-                contentDescription = "Währungen tauschen",
+                contentDescription = stringResource(R.string.cd_swap_currencies),
                 tint = colors.onPrimaryContainer,
                 modifier = Modifier
                     .size(26.dp)
@@ -634,7 +644,9 @@ private fun GlyphKey(key: MinimalKey, colors: ColorScheme, pressed: Boolean) {
     }
 
     Text(
-        text = key.label,
+        // Die Beschriftung der Trenner-Taste folgt der Gerätesprache, der
+        // interne Code bleibt ",".
+        text = if (key.code == ",") key.label.withDecimalSeparator() else key.label,
         color = color,
         fontSize = fontSize.sp,
         fontWeight = FontWeight.Medium,
@@ -681,7 +693,12 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            FooterGlyph(glyph = "↻", tint = colors.onSurfaceVariant, onClick = data.onReload)
+            FooterGlyph(
+                glyph = "↻",
+                description = stringResource(R.string.cd_refresh_rates),
+                tint = colors.onSurfaceVariant,
+                onClick = data.onReload,
+            )
 
             // Kurs oben, Abrufzeitpunkt darunter — zwei verschiedene
             // Aussagen ("wie viel bekomme ich" und "wie alt ist die Auskunft"),
@@ -701,26 +718,26 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    text = data.rate
-                        ?.let { "1 ${data.fromCurrency} = ${formatAmount(it)} ${data.toCurrency}" }
-                        ?: "Kein Kurs verfügbar",
+                    text = data.rate?.let {
+                        stringResource(
+                            R.string.rate_line,
+                            data.fromCurrency,
+                            formatAmount(it).withDecimalSeparator(),
+                            data.toCurrency,
+                        )
+                    } ?: stringResource(R.string.rate_unavailable),
                     color = footerColor,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                data.ratesDate?.let { ratesDate ->
-                    Text(
-                        text = buildString {
-                            if (data.isStale) append("Offline · ")
-                            append("Kurse vom ${formatRatesDate(ratesDate)}")
-                        },
-                        color = footerColor,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                Text(
+                    text = ratesAgeText(fetchedAt = data.fetchedAt, isStale = data.isStale),
+                    color = footerColor,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
 
             // Der Entwurf hat hier noch ein Überlauf-Menü, legt aber nicht
@@ -741,12 +758,21 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
  * würde die Ripple als Rechteck um die Glyphe aufleuchten.
  */
 @Composable
-private fun FooterGlyph(glyph: String, tint: Color, onClick: () -> Unit) {
+private fun FooterGlyph(
+    glyph: String,
+    description: String,
+    tint: Color,
+    onClick: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .size(36.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(onClickLabel = description, onClick = onClick)
+            // Das Symbol ist ein Textzeichen — ein Screenreader würde sonst
+            // dessen Unicode-Namen vorlesen. clearAndSetSemantics ersetzt den
+            // Inhalt durch die Beschreibung.
+            .clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         Text(text = glyph, color = tint, fontSize = 18.sp)
@@ -777,24 +803,51 @@ private fun ThemeGlyph(darkTheme: Boolean, tint: Color, onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-            contentDescription = if (darkTheme) {
-                "Zu hellem Design wechseln"
-            } else {
-                "Zu dunklem Design wechseln"
-            },
+            contentDescription = stringResource(
+                if (darkTheme) R.string.cd_switch_to_light else R.string.cd_switch_to_dark
+            ),
             tint = tint,
             modifier = Modifier.size(20.dp),
         )
     }
 }
 
-private val RatesDateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMANY)
+/**
+ * Wie aktuell die angezeigten Kurse sind.
+ *
+ * Solange der Cache innerhalb der TTL liegt, gilt alles als frisch — dann
+ * steht dort "Just now". Das ist bewusst keine Uhrzeitangabe: Die TTL *ist*
+ * unsere Definition von "aktuell", und ein exakter Zeitstempel würde nur
+ * unsere Cache-Mechanik verraten statt die Frage zu beantworten.
+ *
+ * Erst wenn das Repository auf einen abgelaufenen Cache zurückfällt, weil das
+ * Netz nicht erreichbar war ([isStale]), wird das echte Alter ausgerechnet.
+ */
+@Composable
+private fun ratesAgeText(fetchedAt: Long?, isStale: Boolean): String {
+    if (!isStale || fetchedAt == null) return stringResource(R.string.rates_just_now)
+
+    // Mindestens 1, damit nie "vor 0 Stunden" dasteht.
+    val hours = ((System.currentTimeMillis() - fetchedAt) / 3_600_000L)
+        .coerceAtLeast(1L)
+        .toInt()
+    val age = if (hours < 24) {
+        pluralStringResource(R.plurals.rates_age_hours, hours, hours)
+    } else {
+        val days = hours / 24
+        pluralStringResource(R.plurals.rates_age_days, days, days)
+    }
+    return stringResource(R.string.rates_offline, age)
+}
 
 /**
- * "2026-08-09" → "09.08.2026".
+ * Dezimaltrenner für die *Anzeige*.
  *
- * Bei unerwartetem Format bleibt der Rohwert stehen, statt die Zeile ganz
- * verschwinden zu lassen — lieber ein ISO-Datum als gar keine Angabe.
+ * [CalculatorCore] rechnet intern immer mit Komma — ein fester Trenner hält
+ * die Logik frei von Locale-Fragen. Erst hier wird daraus das, was die
+ * Gerätesprache erwartet: auf einem englischen Gerät ein Punkt.
  */
-private fun formatRatesDate(isoDate: String): String =
-    runCatching { LocalDate.parse(isoDate).format(RatesDateFormatter) }.getOrDefault(isoDate)
+private fun String.withDecimalSeparator(): String {
+    val separator = DecimalFormatSymbols.getInstance().decimalSeparator
+    return if (separator == ',') this else replace(',', separator)
+}
