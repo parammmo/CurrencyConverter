@@ -184,11 +184,18 @@ fun ConverterScreen(
 // Tastenfeld (v2 — andere Belegung als v1)
 // ---------------------------------------------------------------------------
 
-private enum class MinimalKeyKind { DIGIT, OPERATOR, UTILITY, EQUALS }
+/** DIGIT_WIDE: verhält sich wie DIGIT, wird nur kleiner gesetzt ("000"). */
+private enum class MinimalKeyKind { DIGIT, DIGIT_WIDE, OPERATOR, UTILITY, EQUALS }
 
 private data class MinimalKey(val label: String, val code: String, val kind: MinimalKeyKind)
 
-/** Belegung laut Handoff: `%` oben, `⇅` in der letzten Zeile. */
+/**
+ * Belegung laut Handoff, mit einer Abweichung: Statt eines zweiten
+ * Tausch-Knopfes in der letzten Zeile steht dort "000". Das Tauschen erledigen
+ * schon die beiden Kreise oben, und bei Währungen mit großen Zahlen (IDR, KRW)
+ * spart die Taste jede Menge Tipperei. Dadurch stehen 0, 000 und Komma
+ * nebeneinander — die drei Tasten, die Nachkommastellen betreffen.
+ */
 private val MinimalKeyRows: List<List<MinimalKey>> = listOf(
     listOf(
         MinimalKey("C", "C", MinimalKeyKind.UTILITY),
@@ -216,8 +223,8 @@ private val MinimalKeyRows: List<List<MinimalKey>> = listOf(
     ),
     listOf(
         MinimalKey("0", "0", MinimalKeyKind.DIGIT),
+        MinimalKey("000", "000", MinimalKeyKind.DIGIT_WIDE),
         MinimalKey(",", ",", MinimalKeyKind.DIGIT),
-        MinimalKey("⇅", "swap", MinimalKeyKind.UTILITY),
         MinimalKey("=", "=", MinimalKeyKind.EQUALS),
     ),
 )
@@ -290,9 +297,7 @@ private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modi
 
         MinimalKeypad(
             colors = colors,
-            onKey = { code ->
-                if (code == "swap") data.onSwap() else calc = calc.onKey(code)
-            },
+            onKey = { code -> calc = calc.onKey(code) },
             modifier = Modifier.weight(1f),
         )
 
@@ -599,7 +604,10 @@ private fun GlyphKey(key: MinimalKey, colors: ColorScheme, pressed: Boolean) {
     val (color, restingSize) = when (key.kind) {
         MinimalKeyKind.DIGIT -> colors.onSurface to 28f
         MinimalKeyKind.OPERATOR -> colors.primary to 30f
-        else -> colors.onSurfaceVariant to if (key.code == "swap") 24f else 22f
+        // "000" ist dreimal so breit wie eine einzelne Ziffer — etwas kleiner
+        // gesetzt, damit die Taste nicht optisch aus der Reihe fällt.
+        MinimalKeyKind.DIGIT_WIDE -> colors.onSurface to 24f
+        else -> colors.onSurfaceVariant to 22f
     }
 
     val fontSize by animateFloatAsState(

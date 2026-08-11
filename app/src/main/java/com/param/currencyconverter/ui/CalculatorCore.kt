@@ -78,10 +78,17 @@ internal fun formatAmount(n: Double): String {
 }
 
 internal fun CalcState.onKey(key: String): CalcState = when {
-    key.length == 1 && key[0].isDigit() -> when {
-        freshEntry || entry == "0" -> copy(entry = key, freshEntry = false)
-        entry.length < 10 -> copy(entry = entry + key)
-        else -> this
+    // Auch mehrstellig, wegen der "000"-Taste.
+    key.isNotEmpty() && key.all { it.isDigit() } -> when {
+        freshEntry || entry == "0" -> copy(
+            // "000" auf einer 0 (oder als erste Eingabe) bleibt eine 0 —
+            // "000" als Betrag stehen zu lassen wäre Unsinn.
+            entry = if (key.all { it == '0' }) "0" else key,
+            freshEntry = false,
+        )
+        // take(10) statt Ablehnen: Bei "000" nahe der Grenze sollen die
+        // Nullen angehängt werden, die noch passen, statt gar keine.
+        else -> copy(entry = (entry + key).take(10))
     }
 
     key == "," -> when {
