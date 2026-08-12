@@ -1,8 +1,29 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
 }
+
+/**
+ * Zugangsdaten für die Release-Signatur.
+ *
+ * Sie stehen in `keystore.properties` im Projektwurzelverzeichnis, die
+ * absichtlich *nicht* im Repository liegt (siehe .gitignore) — Passwörter
+ * gehören nicht in die Versionsverwaltung, auch nicht in ein privates Repo.
+ *
+ * Fehlt die Datei, wird der Release-Build einfach unsigniert gebaut, statt
+ * mit einem Fehler abzubrechen. Sonst könnte niemand das Projekt auschecken
+ * und bauen, ohne vorher einen Schlüssel zu haben.
+ */
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+val hasReleaseSigning = keystorePropertiesFile.exists()
 
 android {
     namespace = "com.param.currencyconverter"
@@ -22,8 +43,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                // "~" auflösen, damit in keystore.properties auch ein Pfad wie
+                // ~/keys/... stehen darf und nicht nur ein absoluter.
+                storeFile = file(
+                    keystoreProperties.getProperty("storeFile")
+                        .replaceFirst("~", System.getProperty("user.home"))
+                )
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             // R8 wirft ungenutzten Code und ungenutzte Ressourcen raus. Ohne
             // das landen z.B. sämtliche Material-Icons im APK, obwohl wir drei
             // davon benutzen.
