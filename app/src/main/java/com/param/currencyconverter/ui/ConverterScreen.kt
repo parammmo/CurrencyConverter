@@ -399,25 +399,35 @@ private fun CurrencyRow(
         verticalAlignment = Alignment.Bottom,
     ) {
         // alignByBaseline gehört an das direkte Kind der Row — die Box reicht
-        // die Grundlinie ihres Textes nach außen weiter.
+        // die Grundlinie ihres Inhalts nach außen weiter.
         Box(modifier = Modifier.alignByBaseline()) {
-            Text(
-                text = code,
-                color = if (active) colors.primary else colors.onSurfaceVariant,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.14.em,
+            // Flagge und Code teilen sich eine Trefferfläche: Erst dadurch ist
+            // erkennbar, dass hier überhaupt etwas auszuwählen ist — der nackte
+            // Code sah nach Beschriftung aus, nicht nach Knopf.
+            Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(percent = 50))
                     .clickable(
                         onClickLabel = stringResource(R.string.cd_select_currency, code),
                     ) { pickerOpen = true }
                     .padding(horizontal = 6.dp, vertical = 2.dp),
-            )
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CurrencyFlag(code)
+                Text(
+                    text = code,
+                    color = if (active) colors.primary else colors.onSurfaceVariant,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.14.em,
+                )
+            }
             DropdownMenu(expanded = pickerOpen, onDismissRequest = { pickerOpen = false }) {
                 options.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option) },
+                        leadingIcon = { CurrencyFlag(option) },
                         onClick = {
                             onSelect(option)
                             pickerOpen = false
@@ -445,6 +455,29 @@ private fun CurrencyRow(
                 .padding(start = 16.dp),
         )
     }
+}
+
+/**
+ * Flagge zum Währungscode — oder nichts, wenn es für den Code keine gibt.
+ *
+ * Eigenes Text-Element ohne `letterSpacing`: Ein Flaggen-Emoji ist eine Ligatur
+ * aus zwei Zeichen, und Buchstabenabstand dazwischen zerlegt sie wieder in ihre
+ * Einzelteile — statt der Flagge stünde dann "U S" da.
+ *
+ * Etwas größer gesetzt als der Code daneben, weil Emoji ihre Zeichenfläche
+ * anders ausnutzen als Buchstaben und bei gleicher sp-Zahl kleiner wirken.
+ */
+@Composable
+private fun CurrencyFlag(code: String) {
+    val flag = flagEmoji(code) ?: return
+    Text(
+        text = flag,
+        fontSize = 16.sp,
+        // Für den Screenreader unsichtbar: Welche Währung gemeint ist, sagen
+        // der Code und das Klick-Label bereits. Die Flagge würde nur ein
+        // zweites Mal "Vereinigte Staaten" danebensetzen.
+        modifier = Modifier.clearAndSetSemantics {},
+    )
 }
 
 @Composable
