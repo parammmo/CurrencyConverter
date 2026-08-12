@@ -24,9 +24,16 @@ android {
 
     buildTypes {
         release {
+            // R8 wirft ungenutzten Code und ungenutzte Ressourcen raus. Ohne
+            // das landen z.B. sämtliche Material-Icons im APK, obwohl wir drei
+            // davon benutzen.
             optimization {
-                enable = false
+                enable = true
             }
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
     compileOptions {
