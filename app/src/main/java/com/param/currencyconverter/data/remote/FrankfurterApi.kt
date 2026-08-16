@@ -8,6 +8,21 @@ import retrofit2.http.Query
  *
  * Wir schreiben nur das Interface — Retrofit erzeugt zur Laufzeit die
  * Implementierung, die aus den Annotations den HTTP-Call zusammenbaut.
+ *
+ * **Warum nur 30 Währungen?** Frankfurter reicht die Referenzkurse der EZB
+ * durch, und die veröffentlicht genau diese 30. Währungen wie COP, ARS, AED
+ * oder VND sind deshalb nicht bloß nicht eingebaut — sie existieren in dieser
+ * Quelle nicht.
+ *
+ * Geprüft am 2026-08-16, bewusst so entschieden. Die Alternativen mit mehr
+ * Währungen haben jeweils einen Preis:
+ *  - open.er-api.com (166): verlangt eine sichtbare Namensnennung in der App.
+ *  - fawazahmed0 via jsDelivr (339): Community-Projekt ohne Betriebszusage.
+ *  - ExchangeRate-API Free (166): Schlüssel nötig, und 1.500 Anfragen pro
+ *    Monat gelten für *alle* Installationen zusammen — bei 6h-Cache reicht das
+ *    für gut ein Dutzend Nutzer.
+ *
+ * Die EZB-Kurse sind dafür amtlich und ohne Auflagen nutzbar.
  */
 interface FrankfurterApi {
 
