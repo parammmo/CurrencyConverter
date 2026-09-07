@@ -3,6 +3,7 @@ package com.param.currencyconverter.ui
 import androidx.compose.runtime.saveable.listSaver
 import java.math.BigDecimal
 import java.math.MathContext
+import java.math.RoundingMode
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
@@ -77,6 +78,50 @@ internal fun formatAmount(n: Double): String {
     return s.replace('.', ',')
 }
 
+/** Wie viele Nachkommastellen ein *Geldbetrag* höchstens hat. */
+internal const val MAX_MONEY_DECIMALS = 2
+
+/**
+ * Zahl → Anzeigetext für **Geldbeträge**: immer genau zwei Nachkommastellen.
+ *
+ * Getrennt von [formatAmount], weil die beiden verschiedene Fragen
+ * beantworten. [formatAmount] zeigt eine Zahl so genau wie nötig — richtig
+ * für einen Wechselkurs, wo die dritte Stelle noch etwas aussagt.
+ * [formatMoney] zeigt einen Betrag so, wie Geld nun mal geschrieben wird.
+ *
+ * Feste zwei Stellen statt "höchstens zwei" (also "86,00" statt "86"): Sonst
+ * würde die 56sp-Zeile beim Tippen ständig die Breite wechseln, und aus
+ * "1,50 €" würde "1,5 €". Umstellbar, falls dir das zu laut ist.
+ *
+ * [RoundingMode.HALF_UP] ist die kaufmännische Rundung, die man von Geld
+ * erwartet — Kotlins `roundToLong` und Javas Default `HALF_EVEN` runden 0,125
+ * beide anders, als eine Rechnung es täte.
+ */
+internal fun formatMoney(n: Double): String {
+    if (n.isNaN() || n.isInfinite()) return "0"
+    // Ab dieser Größe sind Cent-Stellen ohnehin bedeutungslos, und
+    // formatAmount hat für den Fall schon die lesbarere Exponentialform.
+    if (abs(n) >= 1e10) return formatAmount(n)
+    // BigDecimal.valueOf(n), nicht BigDecimal(n): Der Konstruktor nimmt den
+    // *exakten* Binärwert eines Double, und der ist für 1,005 in Wahrheit
+    // 1,00499999… — gerundet also 1,00, was niemand erwartet. valueOf geht
+    // über Double.toString und rundet daher 1,005 zu 1,01.
+    return BigDecimal.valueOf(n)
+        .setScale(MAX_MONEY_DECIMALS, RoundingMode.HALF_UP)
+        .toPlainString()
+        .replace('.', ',')
+}
+
+/**
+ * Wie viele Ziffern nach dem Komma noch getippt werden dürfen.
+ * Ohne Komma: beliebig viele (die Gesamtlänge begrenzt [onKey] getrennt).
+ */
+private fun String.decimalRoom(): Int {
+    val comma = indexOf(',')
+    if (comma < 0) return Int.MAX_VALUE
+    return (MAX_MONEY_DECIMALS - (length - comma - 1)).coerceAtLeast(0)
+}
+
 internal fun CalcState.onKey(key: String): CalcState = when {
     // Auch mehrstellig, wegen der "000"-Taste.
     key.isNotEmpty() && key.all { it.isDigit() } -> when {
@@ -88,7 +133,15 @@ internal fun CalcState.onKey(key: String): CalcState = when {
         )
         // take(10) statt Ablehnen: Bei "000" nahe der Grenze sollen die
         // Nullen angehängt werden, die noch passen, statt gar keine.
-        else -> copy(entry = (entry + key).take(10))
+        // Dieselbe Logik hinterm Komma: Nach "1,2" nimmt "000" noch genau
+        // eine Null an, danach ist Schluss — sonst könnte man 1,23456
+        // eintippen und sähe es auch, während die Gegenseite auf zwei Stellen
+        // gerundet anzeigt. Zwei Zahlen, die nicht zueinander passen, sind
+        // schlimmer als eine Taste, die mal nichts tut.
+        else -> {
+            val accepted = key.take(entry.decimalRoom())
+            if (accepted.isEmpty()) this else copy(entry = (entry + accepted).take(10))
+        }
     }
 
     key == "," -> when {
@@ -104,11 +157,11 @@ internal fun CalcState.onKey(key: String): CalcState = when {
         freshEntry = false,
     )
 
-    key == "%" -> copy(entry = formatAmount(parseEntry(entry) / 100), freshEntry = true)
+    key == "%" -> copy(entry = formatMoney(parseEntry(entry) / 100), freshEntry = true)
 
     key == "=" -> if (pendingOp != null) {
         copy(
-            entry = formatAmount(applyOp(accumulator ?: 0.0, pendingOp, parseEntry(entry))),
+            entry = formatMoney(applyOp(accumulator ?: 0.0, pendingOp, parseEntry(entry))),
             pendingOp = null,
             accumulator = null,
             freshEntry = true,
@@ -121,7 +174,7 @@ internal fun CalcState.onKey(key: String): CalcState = when {
         // Operator: Steht schon einer an und wurde seitdem getippt, wird erst
         // ausgerechnet — so kettet sich "2 + 3 + 4" wie auf einem echten Rechner.
         val evaluated = if (pendingOp != null && !freshEntry) {
-            formatAmount(applyOp(accumulator ?: 0.0, pendingOp, parseEntry(entry)))
+            formatMoney(applyOp(accumulator ?: 0.0, pendingOp, parseEntry(entry)))
         } else {
             entry
         }

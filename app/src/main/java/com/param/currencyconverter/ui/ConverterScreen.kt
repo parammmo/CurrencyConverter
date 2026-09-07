@@ -269,8 +269,11 @@ private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modi
     var calc by rememberSaveable(stateSaver = CalcStateSaver) { mutableStateOf(CalcState()) }
 
     val entered = parseEntry(calc.entry)
+    // formatMoney statt formatAmount: Das hier ist ein Geldbetrag, kein
+    // Rechenergebnis — zwei Nachkommastellen reichen. Der Kurs in der
+    // Fußzeile bleibt bewusst bei formatAmount, siehe dort.
     val converted = data.rate?.let {
-        formatAmount(if (calc.activeTop) entered * it else entered / it)
+        formatMoney(if (calc.activeTop) entered * it else entered / it)
     } ?: "—"
     // Was beim Seitenwechsel übernommen wird. Ohne Kurs steht in der anderen
     // Zeile "—", und das wäre als Eingabe unbrauchbar.
@@ -296,11 +299,22 @@ private fun ConverterLayout(data: ConverterLayoutData, modifier: Modifier = Modi
             // Eine angefangene Rechenoperation fällt trotzdem weg: Ein
             // "12 +" bezog sich auf die alte Währung und wäre nach dem
             // Wechsel sinnlos.
+            //
+            // freshEntry = true, weil der übernommene Wert ein *Ergebnis* ist:
+            // Die erste getippte Ziffer beginnt eine neue Eingabe, statt sich
+            // hinten anzuhängen. Seit die Beträge auf zwei Nachkommastellen
+            // begrenzt sind, wäre das Anhängen sonst sogar wirkungslos —
+            // "86,00" hat hinterm Komma keinen Platz mehr. Löschen mit ⌫
+            // funktioniert weiterhin.
             onFocusTop = {
-                if (!calc.activeTop) calc = CalcState(entry = carryOver, activeTop = true)
+                if (!calc.activeTop) {
+                    calc = CalcState(entry = carryOver, activeTop = true, freshEntry = true)
+                }
             },
             onFocusBottom = {
-                if (calc.activeTop) calc = CalcState(entry = carryOver, activeTop = false)
+                if (calc.activeTop) {
+                    calc = CalcState(entry = carryOver, activeTop = false, freshEntry = true)
+                }
             },
         )
 
@@ -762,6 +776,9 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                         stringResource(
                             R.string.rate_line,
                             data.fromCurrency,
+                            // Absichtlich formatAmount, nicht formatMoney:
+                            // Ein Kurs ist kein Betrag. "1 EUR = 0,01 IDR"
+                            // wäre auf zwei Stellen gerundet schlicht falsch.
                             formatAmount(it).withDecimalSeparator(),
                             data.toCurrency,
                         )
