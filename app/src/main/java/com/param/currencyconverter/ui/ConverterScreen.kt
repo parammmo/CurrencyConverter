@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -27,12 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,6 +51,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,6 +71,8 @@ data class ConverterLayoutData(
     val fromCurrency: String,
     val toCurrency: String,
     val currencies: List<String>,
+    /** Zuletzt gewählte Codes, neueste zuerst — die Kurzliste im Sheet. */
+    val recentCurrencies: List<String>,
     val onFromSelected: (String) -> Unit,
     val onToSelected: (String) -> Unit,
     val onSwap: () -> Unit,
@@ -174,6 +176,7 @@ fun ConverterScreen(
                 currencies = remember(uiState.rates, uiState.baseCurrency) {
                     (uiState.rates.keys + uiState.baseCurrency).sorted()
                 },
+                recentCurrencies = uiState.recentCurrencies,
                 onFromSelected = onFromSelected,
                 onToSelected = onToSelected,
                 onSwap = onSwap,
@@ -349,6 +352,7 @@ private fun CurrencySection(
                 active = activeTop,
                 colors = colors,
                 options = data.currencies,
+                recents = data.recentCurrencies,
                 onSelect = data.onFromSelected,
                 onFocus = onFocusTop,
                 topPadding = 34.dp,
@@ -361,6 +365,7 @@ private fun CurrencySection(
                 active = !activeTop,
                 colors = colors,
                 options = data.currencies,
+                recents = data.recentCurrencies,
                 onSelect = data.onToSelected,
                 onFocus = onFocusBottom,
                 topPadding = 30.dp,
@@ -378,6 +383,21 @@ private fun CurrencySection(
     }
 }
 
+/**
+ * Die Ausgangsgröße des Betrags — der Wert aus dem Design-Handoff.
+ */
+private val MAX_AMOUNT_SP = 56.sp
+
+/**
+ * Wie klein der Betrag höchstens werden darf.
+ *
+ * Der Betrag ist das Wichtigste auf dem Bildschirm (siehe `ux-guide.md`,
+ * "typografische Hierarchie"). Halbiert ist er immer noch die mit Abstand
+ * größte Schrift der App — die Tasten sind 30sp. Ginge er tiefer, würde ein
+ * langer Betrag optisch hinter das Tastenfeld zurückfallen.
+ */
+private val MIN_AMOUNT_SP = 28.sp
+
 @Composable
 private fun CurrencyRow(
     code: String,
@@ -385,6 +405,7 @@ private fun CurrencyRow(
     active: Boolean,
     colors: ColorScheme,
     options: List<String>,
+    recents: List<String>,
     onSelect: (String) -> Unit,
     onFocus: () -> Unit,
     topPadding: androidx.compose.ui.unit.Dp,
@@ -438,26 +459,63 @@ private fun CurrencyRow(
                     letterSpacing = 0.14.em,
                 )
             }
-            DropdownMenu(expanded = pickerOpen, onDismissRequest = { pickerOpen = false }) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        leadingIcon = { CurrencyFlag(option) },
-                        onClick = {
-                            onSelect(option)
-                            pickerOpen = false
-                        },
-                    )
-                }
+            // Kein DropdownMenu mehr: Seit die Liste 166 Einträge hat, ist
+            // Scrollen keine Auswahl. Das Sheet bringt Suche und Verlauf mit,
+            // siehe [CurrencyPickerSheet].
+            if (pickerOpen) {
+                CurrencyPickerSheet(
+                    codes = options,
+                    recents = recents,
+                    selected = code,
+                    onSelect = {
+                        onSelect(it)
+                        pickerOpen = false
+                    },
+                    onDismiss = { pickerOpen = false },
+                )
             }
         }
 
         Text(
             text = amount,
             color = colors.onBackground,
+            // Statt große Beträge abzuschneiden ("1234…"), wird die Schrift
+            // kleiner, bis der Betrag passt. Ein abgeschnittener Geldbetrag
+            // ist keine Information mehr — man weiß nicht mal die
+            // Größenordnung. Erst unterhalb von [MIN_AMOUNT_SP] greift die
+            // Ellipse doch noch, als letzte Rettung.
+            //
+            // StepBased probiert Schriftgrößen in Schritten durch, bis eine
+            // in die Zeile passt. 2sp-Schritte: fein genug, dass man die
+            // Stufen nicht sieht, grob genug, dass es beim Tippen nicht bei
+            // jeder Ziffer minimal zappelt.
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = MIN_AMOUNT_SP,
+                maxFontSize = MAX_AMOUNT_SP,
+                stepSize = 2.sp,
+            ),
             style = TextStyle(
-                fontSize = 56.sp,
-                lineHeight = 56.sp * 1.15f,
+                // Kein fontSize mehr — das bestimmt jetzt autoSize. Die
+                // lineHeight bleibt aber *fest*: Sie hält die Zeilenhöhe
+                // konstant, egal wie klein die Ziffern werden. Ohne das
+                // würde die Trennlinie samt Tausch-Kreisen nach oben
+                // wandern, sobald ein langer Betrag die Schrift schrumpfen
+                // lässt — die beiden Zeilen sind über die Grundlinie
+                // aneinander ausgerichtet.
+                lineHeight = MAX_AMOUNT_SP * 1.15f,
+                // Der eigentliche Trick, damit die lineHeight oben auch hält:
+                // Compose trimmt bei einer einzelnen Zeile standardmäßig den
+                // Zeilenabstand über und unter dem Text weg (Trim.Both). Dann
+                // ist die Textbox wieder nur so hoch wie die Schrift selbst —
+                // und schrumpft eben doch mit. Trim.None behält die volle
+                // Zeilenhöhe, egal wie klein die Ziffern werden.
+                //
+                // Ohne das wandert das komplette Tastenfeld nach oben, sobald
+                // ein langer Betrag die Schrift verkleinert.
+                lineHeightStyle = LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.None,
+                ),
                 fontWeight = FontWeight.Medium,
                 fontFeatureSettings = "tnum",
                 textAlign = TextAlign.End,
@@ -483,7 +541,9 @@ private fun CurrencyRow(
  * anders ausnutzen als Buchstaben und bei gleicher sp-Zahl kleiner wirken.
  */
 @Composable
-private fun CurrencyFlag(code: String) {
+// internal statt private: Das Auswahl-Sheet zeigt dieselbe Flagge, und zwei
+// Fassungen derselben Sache laufen früher oder später auseinander.
+internal fun CurrencyFlag(code: String) {
     val flag = flagEmoji(code) ?: return
     Text(
         text = flag,

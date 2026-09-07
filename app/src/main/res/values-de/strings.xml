@@ -24,6 +24,12 @@
         <item quantity="other">vor %d Tagen</item>
     </plurals>
 
+    <!-- Währungsauswahl (Bottom-Sheet) -->
+    <string name="picker_search_placeholder">Währung suchen</string>
+    <string name="picker_recent">Zuletzt benutzt</string>
+    <string name="picker_all">Alle Währungen</string>
+    <string name="picker_no_match">Keine Währung zu „%1$s“ gefunden</string>
+
     <!-- Nur für Screenreader, nicht sichtbar -->
     <string name="cd_swap_currencies">Währungen tauschen</string>
     <string name="cd_refresh_rates">Kurse neu laden</string>
@@ -32,4 +38,6 @@
     <string name="cd_switch_to_dark">Zu dunklem Design wechseln</string>
     <string name="cd_clear">Eingabe löschen</string>
     <string name="cd_backspace">Letzte Ziffer löschen</string>
+    <string name="cd_clear_search">Suche löschen</string>
+    <string name="cd_selected">Aktuell ausgewählt</string>
 </resources>

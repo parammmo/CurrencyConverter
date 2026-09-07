@@ -36,6 +36,12 @@
         <item quantity="other">%d days ago</item>
     </plurals>
 
+    <!-- Währungsauswahl (Bottom-Sheet) -->
+    <string name="picker_search_placeholder">Search currency</string>
+    <string name="picker_recent">Recently used</string>
+    <string name="picker_all">All currencies</string>
+    <string name="picker_no_match">No currency found for “%1$s”</string>
+
     <!-- Nur für Screenreader, nicht sichtbar -->
     <string name="cd_swap_currencies">Swap currencies</string>
     <string name="cd_refresh_rates">Refresh rates</string>
@@ -44,4 +50,6 @@
     <string name="cd_switch_to_dark">Switch to dark theme</string>
     <string name="cd_clear">Clear</string>
     <string name="cd_backspace">Delete last digit</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_selected">Currently selected</string>
 </resources>

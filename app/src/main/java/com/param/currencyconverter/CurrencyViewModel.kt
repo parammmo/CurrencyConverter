@@ -32,6 +32,8 @@ data class ConverterUiState(
     /** Kurse stammen aus einem abgelaufenen Cache, weil das Netz nicht ging. */
     val isStale: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    /** Zuletzt gewählte Währungen, neueste zuerst — Kurzliste im Auswahl-Sheet. */
+    val recentCurrencies: List<String> = emptyList(),
 )
 
 class CurrencyViewModel(
@@ -46,6 +48,15 @@ class CurrencyViewModel(
         loadRates()
         observeCurrencyPair()
         observeThemeMode()
+        observeRecents()
+    }
+
+    private fun observeRecents() {
+        viewModelScope.launch {
+            preferences.recentCurrencies.collect { recents ->
+                _uiState.update { it.copy(recentCurrencies = recents) }
+            }
+        }
     }
 
     private fun observeThemeMode() {
