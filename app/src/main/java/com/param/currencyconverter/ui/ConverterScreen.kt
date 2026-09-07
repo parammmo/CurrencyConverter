@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -715,6 +716,12 @@ private fun EqualsKey(key: MinimalKey, colors: ColorScheme, pressed: Boolean) {
     }
 }
 
+/**
+ * Ziel der Namensnennung in der Fußzeile — die Nutzungsbedingungen der
+ * Open-Access-API verlangen einen Verweis auf den Anbieter.
+ */
+private const val ATTRIBUTION_URL = "https://www.exchangerate-api.com"
+
 @Composable
 private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
     Column {
@@ -770,6 +777,27 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+
+                // Pflichtangabe der Kursquelle (siehe [ExchangeRateApi]).
+                // Bewusst die leiseste Zeile im ganzen Bild: 10sp und
+                // zusätzlich abgedunkelt, und *nicht* an `footerColor`
+                // gekoppelt — dass die Kurse veraltet sind, sagen schon die
+                // beiden Zeilen darüber; die Quelle wechselt dabei nicht.
+                // LocalUriHandler ist Compose' Weg, den Browser zu öffnen,
+                // ohne selbst einen Intent zu bauen.
+                val uriHandler = LocalUriHandler.current
+                Text(
+                    text = stringResource(R.string.attribution),
+                    color = colors.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .alpha(0.6f)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .clickable { uriHandler.openUri(ATTRIBUTION_URL) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
 

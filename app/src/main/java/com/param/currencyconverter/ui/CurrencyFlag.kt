@@ -33,8 +33,9 @@ private const val REGIONAL_INDICATOR_A = 0x1F1E6
  *
  * Die Prüfung ist der eigentliche Zweck der Funktion: Ohne sie würde ein Code
  * wie XAU (Gold) oder XDR (IWF-Sonderziehungsrechte) zu "XA" bzw. "XD" — kein
- * Land, also zwei leere Kästchen auf dem Bildschirm. Die Frankfurter-API führt
- * solche Codes aktuell nicht, könnte das aber jederzeit ändern.
+ * Land, also zwei leere Kästchen auf dem Bildschirm. Seit dem Wechsel auf
+ * ExchangeRate-API (166 statt 30 Währungen) ist das kein hypothetischer Fall
+ * mehr: XDR, XAF, XOF, XCD und XPF stehen wirklich in der Liste.
  *
  * EU muss von Hand dazu: Die Europäische Union ist kein Staat und steht daher
  * nicht in [Locale.getISOCountries] — ein Emoji hat sie trotzdem.

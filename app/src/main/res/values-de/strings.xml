@@ -9,6 +9,9 @@
     <string name="rate_line">1 %1$s = %2$s %3$s</string>
     <string name="rate_unavailable">Kein Kurs verfügbar</string>
 
+    <!-- Pflichtangabe der Kursquelle, nicht entfernen. -->
+    <string name="attribution">Kurse von ExchangeRate-API</string>
+
     <string name="rates_just_now">Gerade eben</string>
     <string name="rates_offline">Offline · %1$s</string>
 

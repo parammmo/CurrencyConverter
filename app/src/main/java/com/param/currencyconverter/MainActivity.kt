@@ -51,7 +51,7 @@ fun CurrencyConverterApp() {
         factory = viewModelFactory {
             initializer {
                 CurrencyViewModel(
-                    ExchangeRateRepository(context.applicationContext, NetworkModule.frankfurterApi),
+                    ExchangeRateRepository(context.applicationContext, NetworkModule.exchangeRateApi),
                     UserPreferencesRepository(context.applicationContext),
                 )
             }

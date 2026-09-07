@@ -15,6 +15,12 @@
     <string name="rate_unavailable">No rate available</string>
 
     <!--
+      Pflichtangabe: Die Open-Access-API von ExchangeRate-API darf nur mit
+      sichtbarer Namensnennung genutzt werden. Nicht entfernen.
+    -->
+    <string name="attribution">Rates by ExchangeRate-API</string>
+
+    <!--
       "Just now" heißt hier "aktuell", nicht "vor einer Sekunde": Solange der
       Cache innerhalb der TTL liegt, gelten die Kurse als frisch.
     -->
