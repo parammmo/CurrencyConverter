@@ -39,6 +39,15 @@ kotlin {
             implementation(libs.cmp.foundation)
             implementation(libs.cmp.material3)
             implementation(libs.cmp.ui)
+            implementation(libs.cmp.material.icons.core)
+            // Für SwapVert, DarkMode, LightMode — nicht im core-Set.
+            implementation(libs.cmp.material.icons.extended)
+            // strings.xml als `Res.string.*` — das Multiplatform-Pendant zu R.string.
+            implementation(libs.cmp.components.resources)
+            // ViewModel + collectAsStateWithLifecycle, JetBrains' KMP-Ausgabe
+            // derselben androidx-Artefakte.
+            implementation(libs.jb.lifecycle.viewmodel.compose)
+            implementation(libs.jb.lifecycle.runtime.compose)
             // `document`, `window`, localStorage — in Kotlin/Wasm nicht mehr
             // Teil der Stdlib, sondern eigene Lib.
             implementation(libs.kotlinx.browser)
@@ -60,3 +69,14 @@ kotlin {
         }
     }
 }
+
+compose.resources {
+    // Sonst hieße das generierte Paket `currencyconverter.web.generated.resources`.
+    packageOfResClass = "com.param.currencyconverter.resources"
+    // "auto" schaut nach der Resources-Abhängigkeit in commonMain — unsere
+    // steht in wasmJsMain, also explizit einschalten.
+    generateResClass = org.jetbrains.compose.resources.ResourcesExtension.ResourceClassGeneration.Always
+}
+// Die strings.xml liegen unter src/commonMain/composeResources, obwohl es
+// nur ein Target gibt: Der Ressourcen-Generator erzeugt die Res-Klasse aus
+// commonMain, target-spezifische Ordner überlagern nur.

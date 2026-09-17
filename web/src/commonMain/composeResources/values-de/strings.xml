@@ -1,0 +1,46 @@
+<resources>
+    <!-- Kopie von app/src/main/res/values-de/strings.xml. Zwei Anpassungen für
+         Compose-Multiplatform-Resources: Platzhalter müssen indiziert sein
+         (%1$d statt %d), und Apostrophe brauchen kein Escaping. -->
+    <string name="app_name">Währungsrechner</string>
+
+    <!-- Zustände -->
+    <string name="error_rates_load_failed">Kurse konnten nicht geladen werden</string>
+    <string name="action_try_again">Erneut versuchen</string>
+
+    <!-- Fußzeile -->
+    <string name="rate_line">1 %1$s = %2$s %3$s</string>
+    <string name="rate_unavailable">Kein Kurs verfügbar</string>
+
+    <!-- Pflichtangabe der Kursquelle, nicht entfernen. -->
+    <string name="attribution">Kurse von ExchangeRate-API</string>
+
+    <string name="rates_just_now">Gerade eben</string>
+    <string name="rates_offline">Offline · %1$s</string>
+
+    <plurals name="rates_age_hours">
+        <item quantity="one">vor %1$d Stunde</item>
+        <item quantity="other">vor %1$d Stunden</item>
+    </plurals>
+    <plurals name="rates_age_days">
+        <item quantity="one">vor %1$d Tag</item>
+        <item quantity="other">vor %1$d Tagen</item>
+    </plurals>
+
+    <!-- Währungsauswahl (Bottom-Sheet) -->
+    <string name="picker_search_placeholder">Währung suchen</string>
+    <string name="picker_recent">Zuletzt benutzt</string>
+    <string name="picker_all">Alle Währungen</string>
+    <string name="picker_no_match">Keine Währung zu „%1$s“ gefunden</string>
+
+    <!-- Nur für Screenreader, nicht sichtbar -->
+    <string name="cd_swap_currencies">Währungen tauschen</string>
+    <string name="cd_refresh_rates">Kurse neu laden</string>
+    <string name="cd_select_currency">Währung wählen, aktuell %1$s</string>
+    <string name="cd_switch_to_light">Zu hellem Design wechseln</string>
+    <string name="cd_switch_to_dark">Zu dunklem Design wechseln</string>
+    <string name="cd_clear">Eingabe löschen</string>
+    <string name="cd_backspace">Letzte Ziffer löschen</string>
+    <string name="cd_clear_search">Suche löschen</string>
+    <string name="cd_selected">Aktuell ausgewählt</string>
+</resources>
