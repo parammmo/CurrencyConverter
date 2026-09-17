@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-17T10:00:15.813Z" hostname="aron-t490s" time="0.009">
+  <properties/>
+  <testcase name="moneyRoundsHalfUpOnDecimalText[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.002"/>
+  <testcase name="moneyAlwaysHasTwoDecimals[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.0"/>
+  <testcase name="moneyNeverShowsNegativeZero[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.0"/>
+  <testcase name="amountUsesScientificAboveTenBillion[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.0"/>
+  <testcase name="amountRoundsToSixDecimalsAndEightSignificant[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.001"/>
+  <testcase name="keypadChainsOperators[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.0"/>
+  <testcase name="tripleZeroKeyRespectsDecimalRoom[wasmJs, browser, ChromeHeadless150.0.0.0, Linux0.0.0]" classname="wasmJsBrowserTest.com.param.currencyconverter.ui.CalculatorCoreTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
