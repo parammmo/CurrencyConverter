@@ -1,0 +1,11 @@
+abi_version=2.3.0
+builtins_platform=WASM
+compiler_version=2.3.21
+ir_signature_versions=1,2
+jsOutputName=web
+language_features=+AllowAnyAsAnActualTypeForExpectInterface +JsAllowImplementingFunctionInterface +MultiPlatformProjects
+metadata_version=2.3.0
+serializedIrFileFingerprints=2sf0w63zjyd01.1lsfzui1k1t0m
+serializedKlibFingerprint=27d0607n3r5ho.3q550kiez2txq
+unique_name=CurrencyConverter\:web
+wasm_targets=wasm-js

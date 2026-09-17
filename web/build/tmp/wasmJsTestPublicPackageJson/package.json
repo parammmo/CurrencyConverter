@@ -1,0 +1,12 @@
+{
+  "name": "web-test",
+  "version": "0.0.0-unspecified",
+  "main": "web-test.mjs",
+  "devDependencies": {},
+  "dependencies": {
+    "@js-joda/core": "3.2.0"
+  },
+  "peerDependencies": {},
+  "optionalDependencies": {},
+  "bundledDependencies": []
+}
