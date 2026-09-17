@@ -36,7 +36,7 @@ private object Ipv4OnlyDns : Dns {
  */
 object NetworkModule {
 
-    private const val BASE_URL = "https://api.frankfurter.dev/"
+    private const val BASE_URL = "https://open.er-api.com/"
 
     private val json = Json {
         // Neue Felder in der API-Antwort sollen die App nicht crashen lassen.
@@ -57,10 +57,10 @@ object NetworkModule {
         )
         .build()
 
-    val frankfurterApi: FrankfurterApi = Retrofit.Builder()
+    val exchangeRateApi: ExchangeRateApi = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
-        .create(FrankfurterApi::class.java)
+        .create(ExchangeRateApi::class.java)
 }

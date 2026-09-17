@@ -1,16 +1,18 @@
 package com.param.currencyconverter.ui
 
 import androidx.compose.runtime.saveable.listSaver
-import java.math.BigDecimal
-import java.math.MathContext
-import java.math.RoundingMode
-import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
 import kotlin.math.roundToLong
 
-// Gemeinsame Rechnerlogik beider Taschenrechner-Varianten (v1 und v2 der
-// Design-Vorlage). Beide Handoffs beschreiben exakt dieselbe Semantik, also
-// liegt sie hier einmal statt zweimal — nur die Darstellung unterscheidet sich.
+// Port von CalculatorCore aus :app. Die Rechnerlogik (onKey) ist unverändert
+// übernommen; nur die Zahlenformatierung ist neu, weil BigDecimal,
+// MathContext und String.format zu java.* gehören und in Kotlin/Wasm nicht
+// existieren. Ersatz: ein paar Zeilen Dezimal-Arithmetik auf Strings und
+// Longs — reicht für Beträge < 1e10, und größere gehen ohnehin in die
+// Exponentialschreibweise.
 
 // ---------------------------------------------------------------------------
 // Rechner-Zustand
@@ -58,7 +60,7 @@ private fun applyOp(a: Double, op: Char, b: Double): Double = when (op) {
 
 /** Wie JS `String(zahl)`: ganze Zahlen ohne ".0", sonst kürzeste Darstellung. */
 private fun plainString(v: Double): String =
-    if (v == Math.floor(v) && abs(v) < 1e15) v.toLong().toString() else v.toString()
+    if (v == floor(v) && abs(v) < 1e15) v.toLong().toString() else v.toString()
 
 /**
  * Zahl → Anzeigetext, portiert aus `raw()` im Prototyp: auf 6 Nachkommastellen
@@ -68,14 +70,45 @@ private fun plainString(v: Double): String =
 internal fun formatAmount(n: Double): String {
     if (n.isNaN() || n.isInfinite()) return "0"
     var s = if (abs(n) >= 1e10) {
-        String.format(Locale.US, "%.4e", n)
+        formatScientific(n, decimals = 4)
     } else {
         plainString((n * 1e6).roundToLong() / 1e6)
     }
     if (s.length > 11) {
-        s = plainString(BigDecimal(n).round(MathContext(8)).toDouble())
+        s = plainString(roundToSignificant(n, digits = 8))
     }
     return s.replace('.', ',')
+}
+
+/**
+ * Ersatz für `String.format("%.4e", n)`: Mantisse mit [decimals]
+ * Nachkommastellen, Exponent mit Vorzeichen und mindestens zwei Ziffern —
+ * also "1.2346e+10", genau wie auf Android.
+ */
+private fun formatScientific(n: Double, decimals: Int): String {
+    var exponent = floor(log10(abs(n))).toInt()
+    val factor = 10.0.pow(decimals)
+    var mantissa = (n / 10.0.pow(exponent) * factor).roundToLong()
+    // Rundung kann die Mantisse auf 10,0000 kippen (9,99996 → 10,0000) —
+    // dann eine Stelle in den Exponenten schieben.
+    if (abs(mantissa) >= 10 * factor.toLong()) {
+        mantissa /= 10
+        exponent += 1
+    }
+    val digits = abs(mantissa).toString()
+    val sign = if (mantissa < 0) "-" else ""
+    val mantissaText = digits.dropLast(decimals) + "." + digits.takeLast(decimals)
+    val exponentText = (if (exponent < 0) "-" else "+") +
+        abs(exponent).toString().padStart(2, '0')
+    return "$sign${mantissaText}e$exponentText"
+}
+
+/** Ersatz für `BigDecimal(n).round(MathContext(digits))`. */
+private fun roundToSignificant(n: Double, digits: Int): Double {
+    if (n == 0.0) return 0.0
+    val exponent = floor(log10(abs(n))).toInt()
+    val scale = 10.0.pow(digits - 1 - exponent)
+    return (n * scale).roundToLong() / scale
 }
 
 /** Wie viele Nachkommastellen ein *Geldbetrag* höchstens hat. */
@@ -102,14 +135,39 @@ internal fun formatMoney(n: Double): String {
     // Ab dieser Größe sind Cent-Stellen ohnehin bedeutungslos, und
     // formatAmount hat für den Fall schon die lesbarere Exponentialform.
     if (abs(n) >= 1e10) return formatAmount(n)
-    // BigDecimal.valueOf(n), nicht BigDecimal(n): Der Konstruktor nimmt den
-    // *exakten* Binärwert eines Double, und der ist für 1,005 in Wahrheit
-    // 1,00499999… — gerundet also 1,00, was niemand erwartet. valueOf geht
-    // über Double.toString und rundet daher 1,005 zu 1,01.
-    return BigDecimal.valueOf(n)
-        .setScale(MAX_MONEY_DECIMALS, RoundingMode.HALF_UP)
-        .toPlainString()
-        .replace('.', ',')
+    return roundHalfUp(n.toString(), scale = MAX_MONEY_DECIMALS).replace('.', ',')
+}
+
+/**
+ * Kaufmännische Rundung einer Dezimal-Zeichenkette ("1.005", "-0.5", "86")
+ * auf genau [scale] Nachkommastellen, mit Auffüllen ("86" → "86.00").
+ *
+ * Bewusst auf dem *Text*, nicht auf dem Double: `Double.toString()` liefert
+ * die kürzeste Darstellung, die den Wert eindeutig beschreibt — aus 1,005
+ * wird "1.005", nicht "1.00499999…". Das ist derselbe Trick, den auf
+ * Android `BigDecimal.valueOf` macht (siehe Kommentar dort), nur ohne
+ * BigDecimal. Danach ist Rundung ein Blick auf *eine* Ziffer.
+ */
+private fun roundHalfUp(text: String, scale: Int): String {
+    // Exponentialschreibweise ("1e-7") kommt nur bei winzigen Werten vor —
+    // abs >= 1e10 ist oben schon abgefangen. Die runden auf null.
+    if ('e' in text || 'E' in text) return "0." + "0".repeat(scale)
+
+    val negative = text.startsWith("-")
+    val body = text.removePrefix("-")
+    val intPart = body.substringBefore('.')
+    val fracPart = body.substringAfter('.', "").padEnd(scale + 1, '0')
+
+    // Alle behaltenen Ziffern als eine ganze Zahl, dann +1 wenn die erste
+    // abgeschnittene Ziffer >= 5 ist — der Übertrag (0,995 → 1,00) passiert
+    // damit von selbst.
+    var units = (intPart + fracPart.take(scale)).toLong()
+    if (fracPart[scale] >= '5') units += 1
+
+    val digits = units.toString().padStart(scale + 1, '0')
+    val result = digits.dropLast(scale) + "." + digits.takeLast(scale)
+    // "-0.00" gibt es nicht — ein Betrag, der auf null rundet, hat kein Vorzeichen.
+    return if (negative && units != 0L) "-$result" else result
 }
 
 /**

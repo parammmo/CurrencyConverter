@@ -5,11 +5,13 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.param.currencyconverter.data.remote.FrankfurterApi
+import com.param.currencyconverter.data.remote.ExchangeRateApi
 import com.param.currencyconverter.data.remote.LatestRatesDto
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.time.Instant
+import java.time.ZoneOffset
 
 /**
  * Top-Level-Property (Kotlin-Idiom für ein Singleton-DataStore pro Context) —
@@ -22,7 +24,7 @@ private val Context.ratesDataStore by preferencesDataStore(name = "rates_cache")
  * Was [ExchangeRateRepository.getRates] zurückgibt — das DTO reicht nicht mehr,
  * weil die UI auch wissen muss, *wann* diese Kurse geholt wurden.
  *
- * Wichtig zu trennen: [date] ist das Datum der EZB-Kurse selbst, [fetchedAt]
+ * Wichtig zu trennen: [date] ist der Stand der Kurse bei der Quelle, [fetchedAt]
  * der Zeitpunkt unseres Abrufs. Beim Cache-Treffer liegen die weit auseinander.
  */
 data class RatesResult(
@@ -38,7 +40,7 @@ data class RatesResult(
 /**
  * Cached die *komplette* Kurstabelle für eine Basiswährung (nicht pro
  * Währungspaar — die API liefert eh alle Kurse in einem Call, siehe
- * [FrankfurterApi.latest]).
+ * [ExchangeRateApi.latest]).
  *
  * Cache-Strategie: "stale-while-revalidate light" — ist der Cache jünger als
  * [CACHE_TTL_MILLIS], wird er direkt zurückgegeben, kein Netzwerk-Call.
@@ -46,7 +48,7 @@ data class RatesResult(
  */
 class ExchangeRateRepository(
     private val context: Context,
-    private val api: FrankfurterApi,
+    private val api: ExchangeRateApi,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -74,6 +76,11 @@ class ExchangeRateRepository(
 
         return try {
             val fresh = api.latest(base = base)
+            // Die Quelle meldet Fachfehler ("unsupported-code") mit HTTP 200
+            // und `result: "error"` — ohne diese Prüfung würden wir eine leere
+            // Kurstabelle als Erfolg cachen. error() wirft, und der catch
+            // unten fängt es wie jeden anderen Netzfehler ab.
+            if (fresh.result != "success") error("API-Antwort: ${fresh.result}")
             val now = System.currentTimeMillis()
             writeCache(base, fresh)
             fresh.toResult(fetchedAt = now, isStale = false)
@@ -86,7 +93,13 @@ class ExchangeRateRepository(
 
     private fun LatestRatesDto.toResult(fetchedAt: Long, isStale: Boolean) = RatesResult(
         base = base,
-        date = date,
+        // Die Quelle liefert nur einen Unix-Zeitstempel in Sekunden, kein
+        // fertiges Datum. UTC statt Gerätezeitzone: Es ist der Stand der
+        // Quelle, nicht ein Zeitpunkt beim Nutzer.
+        date = Instant.ofEpochSecond(lastUpdateUnix)
+            .atZone(ZoneOffset.UTC)
+            .toLocalDate()
+            .toString(),
         rates = rates,
         fetchedAt = fetchedAt,
         isStale = isStale,
@@ -98,9 +111,16 @@ class ExchangeRateRepository(
         // Cache gilt nur, wenn er zur angefragten Basiswährung passt —
         if (storedBase != base) return null
 
-        val json = prefs[RATES_JSON_KEY] ?: return null
+        val cachedJson = prefs[RATES_JSON_KEY] ?: return null
         val timestamp = prefs[TIMESTAMP_KEY] ?: return null
-        val dto = this.json.decodeFromString(LatestRatesDto.serializer(), json)
+        // runCatching statt direktem Decode: Nach dem Quellenwechsel liegt auf
+        // bereits installierten Geräten noch ein Frankfurter-JSON im Cache
+        // ({"amount":…,"base":…,"date":…}). Das passt nicht mehr ins neue DTO
+        // und würde beim ersten Start nach dem Update eine Exception werfen.
+        // Einen Cache, den wir nicht mehr lesen können, behandeln wir wie
+        // keinen Cache — also neu laden.
+        val dto = runCatching { json.decodeFromString(LatestRatesDto.serializer(), cachedJson) }
+            .getOrNull() ?: return null
         return dto to timestamp
     }
 

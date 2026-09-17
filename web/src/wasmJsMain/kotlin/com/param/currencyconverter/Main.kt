@@ -1,17 +1,14 @@
 package com.param.currencyconverter
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.ComposeViewport
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -22,45 +19,39 @@ import com.param.currencyconverter.data.UserPreferencesRepository
 import com.param.currencyconverter.data.remote.NetworkModule
 import com.param.currencyconverter.ui.ConverterScreen
 import com.param.currencyconverter.ui.theme.CurrencyConverterTheme
+import kotlinx.browser.document
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            CurrencyConverterApp()
-        }
+/**
+ * Das Web-Pendant zu `MainActivity.onCreate` + `setContent`: [ComposeViewport]
+ * hängt ein <canvas> in das übergebene DOM-Element und rendert die
+ * Composables dort hinein.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+fun main() {
+    ComposeViewport(document.getElementById("app")!!) {
+        CurrencyConverterApp()
     }
 }
 
 /**
- * Die oberste Ebene: hier entsteht das ViewModel, und hier wird entschieden,
- * ob hell oder dunkel gezeichnet wird.
- *
- * Das muss *über* [CurrencyConverterTheme] passieren — das Theme umschließt
- * alles andere, also kann die Entscheidung nicht weiter unten im Baum fallen.
- *
- * Ohne TopAppBar: Der Entwurf füllt den Bildschirm bis unter die Statusleiste,
- * und den Theme-Umschalter trägt die Fußzeile. Eine Titelleiste würde nur
- * Platz kosten und den Namen wiederholen, den schon das App-Icon nennt.
+ * 1:1 aus MainActivity.kt übernommen, bis auf einen Unterschied: Die
+ * Repositories brauchen keinen Context mehr — localStorage ist global,
+ * es gibt nichts, was man ihnen reichen müsste.
  */
 @Composable
 fun CurrencyConverterApp() {
-    val context = LocalContext.current
     val viewModel: CurrencyViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
                 CurrencyViewModel(
-                    ExchangeRateRepository(context.applicationContext, NetworkModule.exchangeRateApi),
-                    UserPreferencesRepository(context.applicationContext),
+                    ExchangeRateRepository(NetworkModule.exchangeRateApi),
+                    UserPreferencesRepository(),
                 )
             }
         }
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Der gespeicherte Wunsch wird hier zur konkreten Ja/Nein-Frage aufgelöst.
-    // SYSTEM ist kein dritter Zeichenmodus — es heißt nur "frag das Gerät".
     val darkTheme = when (uiState.themeMode) {
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
         ThemeMode.LIGHT -> false
@@ -68,8 +59,9 @@ fun CurrencyConverterApp() {
     }
 
     CurrencyConverterTheme(darkTheme = darkTheme) {
-        // Das Scaffold bleibt allein wegen der Fenster-Insets: Es rechnet aus,
-        // wie viel Platz Status- und Navigationsleiste brauchen.
+        // Auf dem Web liefert das Scaffold keine System-Insets (die regelt
+        // index.html per CSS mit den iOS-Safe-Areas), aber es bleibt die
+        // Fläche mit der Hintergrundfarbe des Themes.
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             ConverterScreen(
                 uiState = uiState,

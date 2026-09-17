@@ -197,13 +197,48 @@ Copy-Paste-Resten/Platzhaltertexten ("Test Button" o. ä.) suchen.
 
 ---
 
+## Etappe 8: Währungsauswahl für 166 Einträge (2026-09-07)
+
+**Design-Prinzip:** *Wiedererkennbarkeit statt Erinnerung* (Heuristik 2)
+kippt ins Gegenteil, sobald die Liste zu lang wird: Bei 30 Einträgen ist
+Sehen schneller als Suchen, bei 166 ist es umgekehrt. Dazu *ästhetisches,
+minimalistisches Design* (Heuristik 4) – die Antwort auf "zu viel" ist
+nicht "zwei Listen", sondern **Reihenfolge**: das Wahrscheinlichste oben.
+
+**Verworfene Alternative:** eine kuratierte Kurzliste aus den 30
+EZB-Währungen plus manuell hinzufügbaren. Zwei Gründe dagegen: Die 30 waren
+eine Eigenheit der alten Datenquelle, keine für den Nutzer bedeutsame
+Gruppe – das hätte einen Zufall zur Design-Entscheidung erklärt. Und zwei
+Listen kosten bei jedem Nachschlagen eine Ratefrage ("in welcher steht
+COP?"), also genau die Erinnerungslast, die wir loswerden wollten.
+
+**Umsetzung:** `DropdownMenu` → `ModalBottomSheet` (`CurrencyPickerSheet.kt`).
+Suchfeld über Code *und* Klarname mit dreistufigem Rang (Code-Anfang >
+Wortanfang im Namen > enthalten). Darüber "Zuletzt benutzt", automatisch
+aus `UserPreferencesRepository.recentCurrencies` – die persönliche
+Kurzliste statt einer fremdkuratierten. Klarnamen aus
+`java.util.Currency.getDisplayName()`, kostenlos und in Gerätesprache;
+157 der 166 Codes haben einen, der Rest zeigt nur den Code.
+
+**Nachtrag – Beträge werden nie abgeschnitten:** Statt `TextOverflow`
+schrumpft die Schrift (`TextAutoSize.StepBased`, 56sp → min. 28sp). Ein
+abgeschnittener Geldbetrag ist keine Information mehr – man erkennt nicht
+mal die Größenordnung. Die 28sp sind der Boden, damit der Betrag das
+Wichtigste auf dem Screen bleibt (Tasten sind 30sp). Wichtig dabei:
+`LineHeightStyle(trim = Trim.None)`, sonst schrumpft die Textbox mit und
+das ganze Tastenfeld wandert nach oben.
+
+**Offen:** Das Sheet nutzt `MaterialTheme.typography`-Rollen wie im
+Referenzrahmen gefordert, der Hauptscreen dagegen feste sp-Werte aus dem
+Design-Handoff. Eine der beiden Regeln sollte gewinnen.
+
+**Nachschlagen:** `ModalBottomSheet`, `rememberModalBottomSheetState`,
+`LazyColumn` + `items(key = …)`, `Currency.getDisplayName`.
+
+---
+
 ## Maybe later (nicht eingeplant, erst bei Bedarf entscheiden)
 
-- **Klarnamen im Dropdown** ("USD – US-Dollar" statt nur "USD"). Reduziert
-  *Erinnerungslast* (Heuristik 2). Der `currencies()`-Endpunkt in
-  `FrankfurterApi` existiert schon, ist aber nirgends angebunden. Offen ist,
-  ob das den Aufwand wert ist – bei ~30 Währungen sind die Codes eventuell
-  vertraut genug.
 - Icons (Flaggen der Länder) bei der Auswahl der Währungen
 
 ## Danach (falls noch Lust)

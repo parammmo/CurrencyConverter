@@ -1,0 +1,57 @@
+# Baut die Web-Variante (:web) und veröffentlicht sie auf GitHub Pages.
+#
+# Voraussetzung, einmalig in den Repo-Einstellungen: Pages → Source auf
+# "GitHub Actions" stellen. Läuft bei jedem Push auf main und auf Knopfdruck
+# (Actions-Tab → "Run workflow"), z.B. um einen Branch auszuprobieren.
+name: Web (PWA) auf GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Nur das Nötigste: Code lesen, Pages schreiben, und das OIDC-Token, mit dem
+# sich der Deploy-Schritt bei Pages ausweist.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Zwei Deploys gleichzeitig ergeben keinen Sinn — der ältere wird abgebrochen.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Cached Gradle-Distribution und Abhängigkeiten zwischen den Läufen.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # --configure-on-demand: nur :web konfigurieren. Sonst würde Gradle
+      # auch :app anfassen und dafür das Android-SDK brauchen, das hier
+      # niemand braucht.
+      - name: Distribution bauen
+        run: ./gradlew :web:wasmJsBrowserDistribution --configure-on-demand --no-daemon
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/build/dist/wasmJs/productionExecutable
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

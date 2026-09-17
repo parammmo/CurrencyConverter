@@ -1,4 +1,7 @@
 <resources>
+    <!-- Kopie von app/src/main/res/values/strings.xml. Zwei Anpassungen für
+         Compose-Multiplatform-Resources: Platzhalter müssen indiziert sein
+         (%1$d statt %d), und Apostrophe brauchen kein Escaping. -->
     <!--
       Standardsprache der App ist Englisch; die deutschen Texte liegen in
       values-de/. Android wählt anhand der Gerätesprache aus und fällt auf
@@ -7,7 +10,7 @@
     <string name="app_name">Currency Converter</string>
 
     <!-- Zustände -->
-    <string name="error_rates_load_failed">Couldn\'t load rates</string>
+    <string name="error_rates_load_failed">Couldn’t load rates</string>
     <string name="action_try_again">Try again</string>
 
     <!-- Fußzeile -->
@@ -28,12 +31,12 @@
     <string name="rates_offline">Offline · %1$s</string>
 
     <plurals name="rates_age_hours">
-        <item quantity="one">%d hour ago</item>
-        <item quantity="other">%d hours ago</item>
+        <item quantity="one">%1$d hour ago</item>
+        <item quantity="other">%1$d hours ago</item>
     </plurals>
     <plurals name="rates_age_days">
-        <item quantity="one">%d day ago</item>
-        <item quantity="other">%d days ago</item>
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
     </plurals>
 
     <!-- Währungsauswahl (Bottom-Sheet) -->

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <!--
+      viewport-fit=cover: die Seite darf bis unter Notch und Home-Indicator
+      reichen; die Safe-Areas holen wir uns unten per CSS zurück.
+      user-scalable=no: sonst zoomt Safari bei schnellen Doppeltipps auf dem
+      Ziffernblock.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <title>Currency Converter</title>
+
+    <!-- PWA: Manifest für "Zum Home-Bildschirm" (Name, Icon, Vollbild). -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <!-- Wird von Theme.kt beim Umschalten hell/dunkel nachgeführt. -->
+    <meta name="theme-color" content="#f6f0ea">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!--
+      iOS liest das Manifest nur teilweise und will diese Tags zusätzlich:
+      - apple-mobile-web-app-capable: als Vollbild-App starten, nicht in Safari.
+      - status-bar-style "default": eigene, deckende Statusleiste über der
+        App. Die Alternative "black-translucent" würde die App darunter
+        durchscheinen lassen, zwingt aber weißen Text — im hellen Theme
+        unlesbar.
+      - apple-touch-icon: das Homescreen-Icon, deckend (iOS legt unter
+        Transparenz Schwarz).
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Currency">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            /* Kein Gummiband-Scrollen und keine Textauswahl-Popups auf dem Canvas. */
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            /* Startfarbe, bis Compose läuft; Theme.kt setzt sie danach passend. */
+            background: #f6f0ea;
+        }
+        /*
+          Der Canvas füllt nicht den ganzen Bildschirm, sondern den Bereich
+          zwischen den iOS-Safe-Areas (Statusleiste, Home-Indicator). Die
+          Streifen außenrum zeigen die body-Hintergrundfarbe — deshalb muss die
+          zum Theme passen.
+        */
+        #app {
+            position: fixed;
+            top: env(safe-area-inset-top, 0);
+            right: env(safe-area-inset-right, 0);
+            bottom: env(safe-area-inset-bottom, 0);
+            left: env(safe-area-inset-left, 0);
+        }
+    </style>
+    <script type="application/javascript" src="web.js"></script>
+    <script>
+        // Service Worker registrieren — nur über HTTPS (oder localhost)
+        // erlaubt, sonst ist `serviceWorker` gar nicht vorhanden.
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+        }
+    </script>
+</head>
+<body>
+<div id="app"></div>
+</body>
+</html>

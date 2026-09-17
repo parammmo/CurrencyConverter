@@ -46,8 +46,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
@@ -56,12 +54,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.js.ExperimentalWasmJsInterop
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.param.currencyconverter.ConverterUiState
-import com.param.currencyconverter.R
-import java.text.DecimalFormatSymbols
-import java.util.Locale
+import com.param.currencyconverter.resources.Res
+import com.param.currencyconverter.resources.action_try_again
+import com.param.currencyconverter.resources.attribution
+import com.param.currencyconverter.resources.cd_refresh_rates
+import com.param.currencyconverter.resources.cd_select_currency
+import com.param.currencyconverter.resources.cd_swap_currencies
+import com.param.currencyconverter.resources.cd_switch_to_dark
+import com.param.currencyconverter.resources.cd_switch_to_light
+import com.param.currencyconverter.resources.error_rates_load_failed
+import com.param.currencyconverter.resources.rate_line
+import com.param.currencyconverter.resources.rate_unavailable
+import com.param.currencyconverter.resources.rates_age_days
+import com.param.currencyconverter.resources.rates_age_hours
+import com.param.currencyconverter.resources.rates_just_now
+import com.param.currencyconverter.resources.rates_offline
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Alles, was das Layout zum Zeichnen braucht — gebündelt, damit die einzelnen
@@ -145,7 +160,7 @@ fun ConverterScreen(
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.error_rates_load_failed),
+                    text = stringResource(Res.string.error_rates_load_failed),
                     color = colors.onBackground,
                     fontSize = 16.sp,
                 )
@@ -160,7 +175,7 @@ fun ConverterScreen(
                         .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.action_try_again),
+                        text = stringResource(Res.string.action_try_again),
                         color = colors.onPrimaryContainer,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
@@ -444,7 +459,7 @@ private fun CurrencyRow(
                 modifier = Modifier
                     .clip(RoundedCornerShape(percent = 50))
                     .clickable(
-                        onClickLabel = stringResource(R.string.cd_select_currency, code),
+                        onClickLabel = stringResource(Res.string.cd_select_currency, code),
                     ) { pickerOpen = true }
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -628,7 +643,7 @@ private fun SwapCircles(
         ) {
             Icon(
                 imageVector = Icons.Default.SwapVert,
-                contentDescription = stringResource(R.string.cd_swap_currencies),
+                contentDescription = stringResource(Res.string.cd_swap_currencies),
                 tint = colors.onPrimaryContainer,
                 modifier = Modifier
                     .size(26.dp)
@@ -809,7 +824,7 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
         ) {
             FooterGlyph(
                 glyph = "↻",
-                description = stringResource(R.string.cd_refresh_rates),
+                description = stringResource(Res.string.cd_refresh_rates),
                 tint = colors.onSurfaceVariant,
                 onClick = data.onReload,
             )
@@ -834,7 +849,7 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                 Text(
                     text = data.rate?.let {
                         stringResource(
-                            R.string.rate_line,
+                            Res.string.rate_line,
                             data.fromCurrency,
                             // Absichtlich formatAmount, nicht formatMoney:
                             // Ein Kurs ist kein Betrag. "1 EUR = 0,01 IDR"
@@ -842,7 +857,7 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                             formatAmount(it).withDecimalSeparator(),
                             data.toCurrency,
                         )
-                    } ?: stringResource(R.string.rate_unavailable),
+                    } ?: stringResource(Res.string.rate_unavailable),
                     color = footerColor,
                     fontSize = 12.sp,
                     maxLines = 1,
@@ -865,7 +880,7 @@ private fun MinimalFooter(data: ConverterLayoutData, colors: ColorScheme) {
                 // ohne selbst einen Intent zu bauen.
                 val uriHandler = LocalUriHandler.current
                 Text(
-                    text = stringResource(R.string.attribution),
+                    text = stringResource(Res.string.attribution),
                     color = colors.onSurfaceVariant,
                     fontSize = 10.sp,
                     maxLines = 1,
@@ -942,7 +957,7 @@ private fun ThemeGlyph(darkTheme: Boolean, tint: Color, onClick: () -> Unit) {
         Icon(
             imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
             contentDescription = stringResource(
-                if (darkTheme) R.string.cd_switch_to_light else R.string.cd_switch_to_dark
+                if (darkTheme) Res.string.cd_switch_to_light else Res.string.cd_switch_to_dark
             ),
             tint = tint,
             modifier = Modifier.size(20.dp),
@@ -961,21 +976,22 @@ private fun ThemeGlyph(darkTheme: Boolean, tint: Color, onClick: () -> Unit) {
  * Erst wenn das Repository auf einen abgelaufenen Cache zurückfällt, weil das
  * Netz nicht erreichbar war ([isStale]), wird das echte Alter ausgerechnet.
  */
+@OptIn(ExperimentalTime::class)
 @Composable
 private fun ratesAgeText(fetchedAt: Long?, isStale: Boolean): String {
-    if (!isStale || fetchedAt == null) return stringResource(R.string.rates_just_now)
+    if (!isStale || fetchedAt == null) return stringResource(Res.string.rates_just_now)
 
     // Mindestens 1, damit nie "vor 0 Stunden" dasteht.
-    val hours = ((System.currentTimeMillis() - fetchedAt) / 3_600_000L)
+    val hours = ((Clock.System.now().toEpochMilliseconds() - fetchedAt) / 3_600_000L)
         .coerceAtLeast(1L)
         .toInt()
     val age = if (hours < 24) {
-        pluralStringResource(R.plurals.rates_age_hours, hours, hours)
+        pluralStringResource(Res.plurals.rates_age_hours, hours, hours)
     } else {
         val days = hours / 24
-        pluralStringResource(R.plurals.rates_age_days, days, days)
+        pluralStringResource(Res.plurals.rates_age_days, days, days)
     }
-    return stringResource(R.string.rates_offline, age)
+    return stringResource(Res.string.rates_offline, age)
 }
 
 /**
@@ -983,9 +999,28 @@ private fun ratesAgeText(fetchedAt: Long?, isStale: Boolean): String {
  *
  * [CalculatorCore] rechnet intern immer mit Komma — ein fester Trenner hält
  * die Logik frei von Locale-Fragen. Erst hier wird daraus das, was die
- * Gerätesprache erwartet: auf einem englischen Gerät ein Punkt.
+ * Browsersprache erwartet: auf einem englischen Gerät ein Punkt.
  */
 private fun String.withDecimalSeparator(): String {
-    val separator = DecimalFormatSymbols.getInstance().decimalSeparator
+    val separator = decimalSeparator
     return if (separator == ',') this else replace(',', separator)
 }
+
+/**
+ * Einmal beim Start ermittelt, nicht bei jedem Tastendruck — die
+ * Browsersprache ändert sich nicht, während die App läuft.
+ *
+ * Statt `DecimalFormatSymbols` (JVM) fragen wir den Browser: `Intl` ist die
+ * eingebaute Lokalisierungs-API von JavaScript. 1,1 formatieren und das
+ * zweite Zeichen nehmen ist der übliche Trick, weil `Intl` den Trenner nicht
+ * direkt herausgibt.
+ */
+private val decimalSeparator: Char by lazy { jsFormatOneDotOne().getOrNull(1) ?: ',' }
+
+/**
+ * `js("…")` ist Kotlin/Wasms Tür nach JavaScript: der String ist der
+ * Funktionsrumpf, die Parameter und der Rückgabewert werden automatisch
+ * zwischen Wasm und JS übersetzt.
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun jsFormatOneDotOne(): String = js("new Intl.NumberFormat().format(1.1)")

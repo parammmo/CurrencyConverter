@@ -1,4 +1,7 @@
 <resources>
+    <!-- Kopie von app/src/main/res/values-de/strings.xml. Zwei Anpassungen für
+         Compose-Multiplatform-Resources: Platzhalter müssen indiziert sein
+         (%1$d statt %d), und Apostrophe brauchen kein Escaping. -->
     <string name="app_name">Währungsrechner</string>
 
     <!-- Zustände -->
@@ -16,12 +19,12 @@
     <string name="rates_offline">Offline · %1$s</string>
 
     <plurals name="rates_age_hours">
-        <item quantity="one">vor %d Stunde</item>
-        <item quantity="other">vor %d Stunden</item>
+        <item quantity="one">vor %1$d Stunde</item>
+        <item quantity="other">vor %1$d Stunden</item>
     </plurals>
     <plurals name="rates_age_days">
-        <item quantity="one">vor %d Tag</item>
-        <item quantity="other">vor %d Tagen</item>
+        <item quantity="one">vor %1$d Tag</item>
+        <item quantity="other">vor %1$d Tagen</item>
     </plurals>
 
     <!-- Währungsauswahl (Bottom-Sheet) -->
