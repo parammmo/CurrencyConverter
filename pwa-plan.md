@@ -1,6 +1,6 @@
 # Plan: Currency Converter als PWA fürs iPhone
 
-Stand: 2026-09-17. Ziel: dieselbe App als Website, die man in Safari über
+Ziel: dieselbe App als Website, die man in Safari über
 "Zum Home-Bildschirm" installiert. Kein Mac, kein Apple-Account, kein App
 Store. Der Android-Code in `app/` wird **nicht angefasst**.
 
@@ -132,6 +132,46 @@ ist ~25 Zeilen.
    — bevor der PWA-Feinschliff Zeit kostet.
 6. **PWA-Schicht**: Manifest, Meta-Tags, Service Worker, Icons. Test:
    "Zum Home-Bildschirm", Flugmodus an, App starten.
+
+## Stand 2026-09-17: Schritte 1–4 und 6 sind umgesetzt
+
+Branch `pwa-web`. Was lokal geprüft ist (Headless-Chrome bei 390×844):
+
+- App rendert komplett, Flaggen-Emoji inklusive, Kurse kommen live von
+  der API, Theme-Umschaltung färbt auch `body`/`theme-color` nach.
+- Rundung auf dem echten Wasm-Runtime getestet
+  (`./gradlew :web:wasmJsBrowserTest`, 7 Fälle inkl. 1,005 → 1,01).
+- Offline-Start: Seite einmal online geladen, Server abgeschaltet, neu
+  geladen — App startet aus dem Service-Worker-Cache, Kurse aus
+  localStorage.
+- Precache-Liste wird beim Build aus dem Distribution-Ordner erzeugt (die
+  Wasm-Dateien heißen nach Hash). Grund: Beim allerersten Laden fängt der
+  Worker die Wasm-Anfragen noch nicht ab, "beim ersten Abruf cachen" hätte
+  also ein Loch.
+
+Lokal ausprobieren: `./gradlew :web:wasmJsBrowserDevelopmentRun` (Dev-Server
+mit Hot-Reload) oder Distribution bauen und
+`python3 -m http.server` im `productionExecutable`-Ordner.
+
+**Was noch aussteht — braucht das echte iPhone bzw. das öffentliche Repo:**
+
+1. Repo public stellen, dann in den Repo-Einstellungen Pages → Source auf
+   "GitHub Actions". Der Workflow `.github/workflows/deploy-web.yml` baut
+   bei jedem Push auf `main` (oder per "Run workflow" auf jedem Branch).
+   Adresse danach: `https://parammmo.github.io/CurrencyConverter/`.
+   Der Workflow ist lokal nur bis zum Gradle-Aufruf geprüft (mit
+   `--configure-on-demand`, damit CI kein Android-SDK braucht).
+2. Auf dem iPhone in Safari öffnen — **das ist der eigentliche Test**:
+   - Texteingabe im Währungs-Sheet (iOS-Tastatur auf Canvas-Textfeld).
+   - Statusleiste: gesetzt ist `apple-mobile-web-app-status-bar-style`
+     = `default` (deckende Leiste, App darunter). Ob iOS dabei die
+     `theme-color` übernimmt, zeigt erst das Gerät; sonst Alternative
+     `black-translucent` + Safe-Area-Streifen, die schon vorbereitet sind.
+   - Sprache: Compose-Resources wählen nach Browsersprache; Headless-Chrome
+     meldete sich hier als Englisch, deshalb steht in den Screenshots
+     "Just now" und der Punkt als Dezimaltrenner.
+   - Scroll-Physik im Bottom-Sheet, Doppeltipp-Zoom (per Viewport verboten).
+3. Danach "Zum Home-Bildschirm", Flugmodus an, starten.
 
 ## Bekannte Risiken, ehrlich sortiert
 

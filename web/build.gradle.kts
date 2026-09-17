@@ -70,6 +70,55 @@ kotlin {
     }
 }
 
+/**
+ * Setzt in sw.js die Build-Kennung ein (`@buildId@` → kurzer Git-Commit).
+ * Der Service Worker nutzt sie als Cache-Namen; nur so erkennt der Browser
+ * einen neuen Build und räumt den alten Cache weg.
+ *
+ * ReplaceTokens statt Gradles `expand`: expand ist eine Groovy-Template-
+ * Engine und liest jedes `${…}` im JS als Platzhalter. ReplaceTokens
+ * ersetzt stumpf `@name@` und lässt alles andere in Ruhe.
+ */
+val buildId: String = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+}.standardOutput.asText.map { it.trim() }.orElse("dev").get()
+
+tasks.named<ProcessResources>("wasmJsProcessResources") {
+    // Lokale Kopie: Die Closure unten darf keine Skript-Variable anfassen,
+    // sonst kann der Configuration-Cache sie nicht serialisieren.
+    val id = buildId
+    inputs.property("buildId", id)
+    filesMatching("sw.js") {
+        filter(org.apache.tools.ant.filters.ReplaceTokens::class, "tokens" to mapOf("buildId" to id))
+    }
+}
+
+/**
+ * Trägt nach dem Bündeln die vollständige Dateiliste in sw.js ein.
+ *
+ * Warum nicht "beim ersten Abruf cachen": Beim allerersten Laden wird der
+ * Service Worker erst *während* des Seitenaufbaus installiert, und web.js
+ * fordert die Wasm-Dateien an, bevor er Anfragen abfangen darf. Die wären
+ * dann beim ersten Offline-Start nicht da. Also muss der Worker alles
+ * vorab laden — und die Namen der Wasm-Dateien (mit Hash) kennt erst dieser
+ * Schritt, nach webpack.
+ */
+tasks.named<Sync>("wasmJsBrowserDistribution") {
+    doLast {
+        val dist = destinationDir
+        val files = dist.walkTopDown()
+            .filter { it.isFile }
+            .map { it.relativeTo(dist).path }
+            .filterNot { it == "sw.js" || it.endsWith(".map") || it.endsWith(".LICENSE.txt") }
+            .sorted()
+            .joinToString(", ") { "\"./$it\"" }
+        val sw = dist.resolve("sw.js")
+        sw.writeText(
+            sw.readText().replace(Regex("const PRECACHE = .*;"), "const PRECACHE = [\"./\", $files];")
+        )
+    }
+}
+
 compose.resources {
     // Sonst hieße das generierte Paket `currencyconverter.web.generated.resources`.
     packageOfResClass = "com.param.currencyconverter.resources"
