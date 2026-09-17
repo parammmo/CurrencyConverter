@@ -40,11 +40,11 @@ weiter durch.
 ```
 web/
   build.gradle.kts            kotlin("multiplatform") + compose, Target wasmJs
-  src/wasmJsMain/
-    kotlin/…/                 kopierte + angepasste Kotlin-Dateien
-    composeResources/
+  src/commonMain/composeResources/
       values/strings.xml      1:1 aus app/src/main/res/values
       values-de/strings.xml
+  src/wasmJsMain/
+    kotlin/…/                 kopierte + angepasste Kotlin-Dateien
     resources/
       index.html              Canvas-Container, Meta-Tags, Manifest-Link
       manifest.webmanifest    Name, Icons, display: standalone, Farben
@@ -52,8 +52,9 @@ web/
       icons/                  aus design/icon/play_store_512.png abgeleitet
 ```
 
-Ein einziges Source-Set (`wasmJsMain`, kein `commonMain`): Wir bauen nur für
-ein Ziel, ein zweites Source-Set wäre Struktur ohne Nutzen.
+Kotlin-Code nur in `wasmJsMain` (ein Ziel, `js()`-Interop erlaubt): Ein
+`commonMain` gibt es nur, weil der Ressourcen-Generator die `Res`-Klasse
+von dort aus erzeugt.
 
 ## Datei für Datei: Was übernommen werden kann, was ersetzt wird
 
@@ -70,7 +71,7 @@ ein Ziel, ein zweites Source-Set wäre Struktur ohne Nutzen.
 | `data/UserPreferencesRepository.kt` | Schnittstelle 1:1 | `Flow<CurrencyPair>` etc. bleiben; darunter statt DataStore ein `MutableStateFlow`, der aus `localStorage` initialisiert wird und bei jeder Änderung dorthin schreibt. Zwei Schlüssel-Präfixe (`rates.` / `settings.`) statt zwei Dateien — dieselbe Trennung wie jetzt. |
 | `data/remote/ExchangeRateApi.kt`, `NetworkModule.kt` | neu, ~30 Zeilen | Retrofit/OkHttp sind JVM-only → Ktor Client (`ktor-client-js`), `ContentNegotiation` mit kotlinx-serialization. Dieselbe URL `https://open.er-api.com/v6/latest/{base}`, kein Key, CORS erlaubt (geprüft am 2026-09-17: `access-control-allow-origin: *`). |
 | `data/remote/LatestRatesDto.kt` | 1:1 | reines kotlinx-serialization. |
-| `MainActivity.kt` | neu, ~15 Zeilen | `fun main() = ComposeViewport(document.body!!) { App() }`. Kein `enableEdgeToEdge`, dafür `viewport-fit=cover` in `index.html` + `env(safe-area-inset-*)` als CSS-Padding fürs Notch/Home-Indicator. |
+| `MainActivity.kt` | neu, ~15 Zeilen | `fun main() = ComposeViewport(document.getElementById("app")!!) { App() }`. Kein `enableEdgeToEdge`, dafür `viewport-fit=cover` in `index.html` + `env(safe-area-inset-*)` als CSS-Padding fürs Notch/Home-Indicator. |
 
 Warum DataStore nicht: Die KMP-Version deckt Android/JVM/iOS ab, wasmJs ist
 nicht sicher dabei, und `localStorage` ist auf dem Web ohnehin das
